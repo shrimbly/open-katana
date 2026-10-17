@@ -559,14 +559,17 @@ describe("the queue", () => {
     await waitRun(b.run.id, statusIs("starting", "running", "done"));
     await waitRun(b.run.id, statusIs("done"));
 
-    const c = await start(process.env.FAKE_CLAUDE_SCENARIO);
+    // c pauses far longer than the steps below take on a slow CI runner, so it is still running when d
+    // starts; it is stopped explicitly once both have been seen running together.
+    const c = await start(withPause("template-success", 120_000));
     await waitRun(c.run.id, statusIs("running"));
     const d = await start(process.env.FAKE_CLAUDE_SCENARIO);
     await waitRun(d.run.id, statusIs("queued"));
     expect((await api<RunSummary>("POST", `/api/runs/${d.run.id}/start-now`, {})).status).toBe(202);
     await waitRun(d.run.id, statusIs("running"));
     expect((await api<RunState>("GET", `/api/runs/${c.run.id}`)).body.status).toBe("running");
-    await waitRun(c.run.id, statusIs("done"));
+    expect((await api("POST", `/api/runs/${c.run.id}/cancel`, {})).status).toBe(202);
+    await waitRun(c.run.id, statusIs("cancelled"));
     await waitRun(d.run.id, statusIs("done"));
     expect((await api("POST", `/api/runs/${d.run.id}/start-now`, {})).status).toBe(409);
   });
