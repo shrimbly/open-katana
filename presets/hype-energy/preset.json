@@ -1,0 +1,1693 @@
+{
+  "slug": "hype-energy",
+  "title": "Hype Energy",
+  "description": "Understated-to-hype character edit on a tight 144 BPM grid: zoom-blur, whip and spin landings, a stacking photo-card collage, a spin that drops the background to black, then a flash-cut drop with giant stacked words, cloned walk tiles and a chair-as-throne finale.",
+  "category": "personalized_edits",
+  "format": {
+    "aspect": "9:16",
+    "durationSec": 16.433,
+    "fps": 60
+  },
+  "inputs": {
+    "images": {
+      "min": 1,
+      "max": 5,
+      "title": "Your character: face and full outfit"
+    },
+    "music": "optional",
+    "instructionsMaxChars": 2000
+  },
+  "recipe": {
+    "look": "Natural overcast daylight in one everyday location, soft and slightly warm with lifted blacks (black trousers read as #3B3B3A) and muted greens; no stylised grade. Closest built-in: dreamy (or none if the generated clips are already soft). Flash-cuts are a warm cream tint (#F3EACD) that washes over the titles. Two shots drop the background to pure black (subject matte over #000000).",
+    "fonts": [
+      "League Gothic",
+      "Bebas Neue"
+    ],
+    "palette": [
+      "#FEFBF3",
+      "#F3EACD",
+      "#61634B",
+      "#3B3B3A",
+      "#CFCABD",
+      "#AEB8BA",
+      "#8A7838",
+      "#2A2F1E",
+      "#000000"
+    ],
+    "energy": "Measured on the reference: 32 cuts in 16.43 s (1.95 cuts/s): 26 held shots of 0.27–1.67 s (mean 0.62 s) plus 7 inserts of 1–5 frames. Cuts sit on a 144 BPM grid (0.4167 s = 25 frames at 60 fps, b0 at 0.5 s; the skeleton's grid): 23 of 32 exactly on a beat and 27 within 2 frames; the off-grid ones are the two opening teaser frames, a transition tail, a 5-frame insert and the drop cut at b18.36 (8.15 s), which follows the music. The beat tracker alone reports 107.7 BPM (a 3:4 sub-grid); the cut-derived tempo is 143.99 BPM. 7 cream flash-cuts (0.43/s), all after the drop, plus 1 black frame; ~17 blur landings (zoom-blur, whip or spin, 3–6 frames each); 4 collage cards land on 4 consecutive beats. Holds are near-static with 3–8% push-ins.",
+    "structure": [
+      {
+        "at": "0–0.95 s (to b1.08)",
+        "role": "cold open",
+        "guidance": "Two 1-frame teasers (stare, outfit detail), then ground-level shoe step and a laces close-up, each landing with a zoom blur. Two more 1-frame angle inserts snap into the first wide."
+      },
+      {
+        "at": "b1.08–b7",
+        "role": "understated setup",
+        "guidance": "Dutch wide spins in, then chest-up stare, then a vertical whip into worm's-eye legs. Two small plain titles undersell the hero."
+      },
+      {
+        "at": "b7–b11",
+        "role": "photo-card collage",
+        "guidance": "White-bordered cards of earlier angles (one polaroid) slide in over the wide one per beat, four cards; two swap content just before the cut."
+      },
+      {
+        "at": "b11–b17",
+        "role": "spin and isolate",
+        "guidance": "Arms-out spin in the location; mid-spin the background drops to black; then a walk-in with zoom blur. Music thins and breaks around 7.2 s."
+      },
+      {
+        "at": "b17–b18.36",
+        "role": "the question",
+        "guidance": "Hard cut to an extreme close-up (nose-bridge push) with a doubting line; riser into the drop."
+      },
+      {
+        "at": "b18.36–b21",
+        "role": "drop",
+        "guidance": "Cream flash-cuts carry giant stacked words one per cut, then one black frame and three walk strips wiping in as clones."
+      },
+      {
+        "at": "b21–b34",
+        "role": "payoff montage",
+        "guidance": "Every beat is a flash-cut or a whip: towering low angle, head turn, zip pull with shake, chair sit, head turn on black, walk-in under the third word, laces, close-up smirk."
+      },
+      {
+        "at": "b34–end",
+        "role": "finale",
+        "guidance": "Leaning back in the chair, then a flash-cut to the frontal 'throne' hold with a small claim title at the top; hold 1.35 s to the end."
+      }
+    ],
+    "titles": "All caps tall condensed italic sans (League Gothic, slanted; letters ≈0.4 of cap height wide — Bebas Neue is too wide at these sizes), warm white #FEFBF3 with a faint shadow, no box. Each line pops in about 5 frames after its cut (once the blur settles) and leaves with the shot; the first one smears out with the zoom-through. Pattern (true cap heights measured): two small lines (7.3% then 5.8% of frame height) that describe the subject and place plainly — lower third, then mid-frame; a doubting question low in frame (6.6%); then the hype phrase stacked one word per flash-cut, huge for the first two words (16.5%, 11.7% spanning the width) and 9.9% for the third; the closing claim is small (5.8%) at the top above the hero. Tailor lines 1–2 to the user's subject and place; keep each to about 11–13 letters so it fills about 55–65% of the width like the reference (longer lines overflow while popping).",
+    "music": "A 144 BPM hype track (or 72 half-time) with a lighter verse, a short break around 7.2 s, a riser and a heavy bass drop at ~8.1 s that runs to the end. The skeleton is in grid beats (grid 144 BPM, b0 at 0.5 s): with other music, set grid.bpm/phase to its tempo and first downbeat and move the drop cut (b18.36) onto its drop. The reference track already contains whooshes and hits, so lower or drop the skeleton's sfx when using it.",
+    "generation": "One location, one outfit, one identity across 11 short clips: compose a still per slot from @image1 (same set and soft daylight, extreme angles — ground level, worm's-eye, bird's-eye, tight close-ups), then image-to-video each for 3–6 s with a single simple move. Keep cameras locked or barely handheld; the edit adds all the energy (dutch tilt, landings, cards, tiles). Then run the matte job on the spin and head-turn clips for the two black-background shots. Clips at 24 fps are fine on the 60 fps canvas; add interpolate \"blend\" on slow holds if they judder. MiniMax H3's licence excludes use of the open weights (including on Comfy Cloud) in the United States, European Union, United Kingdom and South Korea; there, or when the user wants Apache-2.0 models only, use wan22-14b-i2v for the i2v slots (16 fps; the same blend applies)."
+  },
+  "slots": [
+    {
+      "id": "temple",
+      "kind": "clip",
+      "description": "Chest-up shot, eye level: the hero raises one finger to the temple and holds a calm, confident stare into the lens.",
+      "operation": "still.compose → clip.i2v (minimax-h3-i2v)",
+      "guidance": "Compose the hero from @image1 in the location, soft overcast light. 4–5 s, locked-off phone camera; the finger rises in the first half second, then almost no motion. Used as a 1-frame teaser, two holds and a collage card."
+    },
+    {
+      "id": "detail",
+      "kind": "clip",
+      "description": "Extreme close-up of a hand on the outfit's signature detail (pulling a jacket zip up, fixing a collar, a bracelet, a chain).",
+      "operation": "still.compose → clip.i2v (minimax-h3-i2v)",
+      "guidance": "Fill the frame with fabric and hand, shallow focus. 3–4 s, one clean upward pull; texture matters more than the face."
+    },
+    {
+      "id": "sneaker",
+      "kind": "clip",
+      "description": "Ground-level shot of the hero's shoe stepping down onto the ground, then resting; framed so a tight crop reads as a laces close-up.",
+      "operation": "still.compose → clip.i2v (minimax-h3-i2v)",
+      "guidance": "Camera on the ground, lens a few cm from the grass/floor, shoe fills the lower half. 4–5 s: the step lands in the first 0.5 s, then stays still (the skeleton crops 1.6–1.85× into the laces for three later shots and a polaroid card)."
+    },
+    {
+      "id": "low-angle",
+      "kind": "clip",
+      "description": "Worm's-eye full body: camera on the ground between the feet looking up, the hero towers against the sky looking down at the lens, hands in pockets.",
+      "operation": "still.compose → clip.i2v (minimax-h3-i2v)",
+      "guidance": "Strong wide-angle distortion, sky behind, legs and shoes huge in the foreground. 4 s, tiny motion (a head tilt). A 1.25× crop gives the legs-only variant."
+    },
+    {
+      "id": "top-down",
+      "kind": "clip",
+      "description": "Bird's-eye close-up: camera directly above, the hero looks straight up into the lens, ground filling the background.",
+      "operation": "still.compose → clip.i2v (minimax-h3-i2v)",
+      "guidance": "Face centred, shoulders visible, big eyes-to-lens contact. 4 s, a slow blink or slight lean only."
+    },
+    {
+      "id": "stand-wide",
+      "kind": "clip",
+      "description": "Wide full-body shot of the hero standing in the location, hands in pockets, relaxed lean, like a casual phone shot.",
+      "operation": "still.compose → clip.i2v (minimax-h3-i2v)",
+      "guidance": "The 'ordinary' establishing shot: whole body plus the everyday setting (house, fence, hedge). 4–5 s, a small weight shift. The skeleton adds the dutch tilt; also the collage background and a 5-frame insert."
+    },
+    {
+      "id": "spin",
+      "kind": "clip",
+      "description": "Full body from behind: the hero spins slowly on the spot with arms held out, turning to face the camera.",
+      "operation": "clip.motion pose (wan22-14b-fun-control) with any slow-spin reference, or still.compose → clip.i2v (minimax-h3-i2v)",
+      "guidance": "Wide, static camera, 3–4 s of one continuous 180–270° turn that ends facing the lens around 2 s; keep the arms out so the silhouette reads."
+    },
+    {
+      "id": "spin-matte",
+      "kind": "clip",
+      "description": "Subject matte of the spin clip (white subject on black), aligned frame for frame.",
+      "operation": "matte (birefnet) of slot:spin",
+      "guidance": "Derived, no generation: run the matte job on the accepted spin clip. Lets the second half of the spin drop its background to pure black."
+    },
+    {
+      "id": "walk",
+      "kind": "clip",
+      "description": "Waist-down shot of the hero walking straight toward the camera, outfit and shoes in focus.",
+      "operation": "still.compose → clip.i2v (minimax-h3-i2v)",
+      "guidance": "Camera at hip height, static or backing away slowly, 4–5 s of steady confident steps, legs centred (the centre third is reused for the clone tiles)."
+    },
+    {
+      "id": "smirk",
+      "kind": "clip",
+      "description": "Extreme close-up of the face: one finger to the nose bridge (pushing glasses up if the hero wears them, or lowering sunglasses), a knowing half-smile.",
+      "operation": "still.compose → clip.i2v (minimax-h3-i2v)",
+      "guidance": "Face fills the frame, eyes on the lens. 3–4 s: the push lands early, the smirk grows by the end (the end is used as the second close-up)."
+    },
+    {
+      "id": "head-turn",
+      "kind": "clip",
+      "description": "Medium shot in profile: the hero snaps their head round to the lens so the hair swings out.",
+      "operation": "still.compose → clip.i2v (minimax-h3-i2v)",
+      "guidance": "Chest-up, location softly behind. 3–4 s, the turn lands within ~0.5 s and the hair settles; strong single motion. Used for three shots and two collage cards."
+    },
+    {
+      "id": "head-turn-matte",
+      "kind": "clip",
+      "description": "Subject matte of the head-turn clip, aligned frame for frame.",
+      "operation": "matte (birefnet) of slot:head-turn",
+      "guidance": "Derived, no generation: lets one head turn play on pure black. Hair edges matter; check the matte on the hair swing."
+    },
+    {
+      "id": "throne",
+      "kind": "clip",
+      "description": "Wide frontal shot: the hero walks to a plain chair in the middle of the location, sits, and leans back like it is a throne.",
+      "operation": "still.compose → clip.i2v (minimax-h3-i2v)",
+      "guidance": "Symmetric framing, chair centred, room at the top for the last title. 5–6 s: reach the chair by ~1 s, seated by ~2.5 s, leaning back still from ~4 s (the finale holds there for 1.35 s)."
+    }
+  ],
+  "skeleton": {
+    "canvas": {
+      "width": 1080,
+      "height": 1920,
+      "fps": 60,
+      "durationSec": 16.433
+    },
+    "grid": {
+      "bpm": 144,
+      "phase": 0.5
+    },
+    "audio": {
+      "asset": "ref",
+      "offset": 0
+    },
+    "finish": {
+      "look": "dreamy",
+      "grain": 0.08,
+      "vignette": 0,
+      "letterbox": 0
+    },
+    "shots": [
+      {
+        "id": "s01",
+        "start": 0.0,
+        "end": 0.0167,
+        "source": {
+          "asset": "slot:temple",
+          "in": 1.5
+        },
+        "note": "1-frame teaser of the hero stare"
+      },
+      {
+        "id": "s02",
+        "start": 0.0167,
+        "end": 0.0333,
+        "source": {
+          "asset": "slot:detail",
+          "in": 1.0
+        },
+        "note": "1-frame teaser of the outfit detail"
+      },
+      {
+        "id": "s03",
+        "start": 0.0333,
+        "end": 0.1333,
+        "source": {
+          "asset": "slot:sneaker",
+          "in": 0.0
+        },
+        "camera": {
+          "zoom": [
+            1.45,
+            1.0
+          ],
+          "ease": "out"
+        },
+        "fx": {
+          "zoomBlur": 0.7,
+          "trail": 0.3
+        },
+        "note": "zoom-blur landing: shoe steps onto grass"
+      },
+      {
+        "id": "s04",
+        "start": 0.1333,
+        "end": "b0",
+        "source": {
+          "asset": "slot:sneaker",
+          "in": 0.1
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.04
+          ]
+        }
+      },
+      {
+        "id": "s05",
+        "start": "b0",
+        "end": "b0.16",
+        "source": {
+          "asset": "slot:sneaker",
+          "in": 2.0
+        },
+        "camera": {
+          "zoom": [
+            2.2,
+            1.75
+          ],
+          "ease": "out",
+          "anchor": [
+            0.55,
+            0.6
+          ]
+        },
+        "fx": {
+          "zoomBlur": 0.6,
+          "trail": 0.3
+        },
+        "note": "zoom into the laces (crop of the sneaker clip)"
+      },
+      {
+        "id": "s06",
+        "start": "b0.16",
+        "end": "b1",
+        "source": {
+          "asset": "slot:sneaker",
+          "in": 2.07
+        },
+        "camera": {
+          "zoom": [
+            1.75,
+            1.85
+          ],
+          "anchor": [
+            0.55,
+            0.6
+          ]
+        }
+      },
+      {
+        "id": "s07",
+        "start": "b1",
+        "end": "b1.04",
+        "source": {
+          "asset": "slot:low-angle",
+          "in": 2.0
+        },
+        "note": "1-frame insert"
+      },
+      {
+        "id": "s08",
+        "start": "b1.04",
+        "end": "b1.08",
+        "source": {
+          "asset": "slot:top-down",
+          "in": 1.0
+        },
+        "note": "1-frame insert"
+      },
+      {
+        "id": "s09",
+        "start": "b1.08",
+        "end": "b1.28",
+        "source": {
+          "asset": "slot:stand-wide",
+          "in": 0.2
+        },
+        "camera": {
+          "roll": [
+            -30,
+            -6
+          ],
+          "zoom": [
+            1.3,
+            1.0
+          ],
+          "ease": "out",
+          "overscan": 1.18
+        },
+        "fx": {
+          "zoomBlur": 0.4,
+          "blur": [
+            10,
+            2
+          ],
+          "trail": 0.4
+        },
+        "note": "spin-in landing on the dutch wide"
+      },
+      {
+        "id": "s10",
+        "start": "b1.28",
+        "end": "b2.92",
+        "source": {
+          "asset": "slot:stand-wide",
+          "in": 0.28
+        },
+        "camera": {
+          "roll": [
+            -6,
+            -3
+          ],
+          "zoom": [
+            1.0,
+            1.04
+          ],
+          "ease": "linear",
+          "overscan": 1.18
+        }
+      },
+      {
+        "id": "s11",
+        "start": "b2.92",
+        "end": "b3.16",
+        "source": {
+          "asset": "slot:stand-wide",
+          "in": 1.0
+        },
+        "camera": {
+          "zoom": [
+            1.04,
+            1.6
+          ],
+          "roll": -3,
+          "ease": "in",
+          "overscan": 1.18
+        },
+        "fx": {
+          "zoomBlur": 0.7,
+          "blur": [
+            0,
+            8
+          ],
+          "trail": 0.5
+        },
+        "note": "zoom-through out of the wide"
+      },
+      {
+        "id": "s12",
+        "start": "b3.16",
+        "end": "b3.32",
+        "source": {
+          "asset": "slot:temple",
+          "in": 0.3
+        },
+        "camera": {
+          "zoom": [
+            1.3,
+            1.0
+          ],
+          "ease": "out"
+        },
+        "fx": {
+          "zoomBlur": 0.5,
+          "trail": 0.3
+        }
+      },
+      {
+        "id": "s13",
+        "start": "b3.32",
+        "end": "b5",
+        "source": {
+          "asset": "slot:temple",
+          "in": 0.37
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.06
+          ]
+        }
+      },
+      {
+        "id": "s14",
+        "start": "b5",
+        "end": "b5.04",
+        "source": {
+          "asset": "slot:temple",
+          "in": 1.07
+        },
+        "camera": {
+          "panFrom": [
+            0.1,
+            0
+          ],
+          "zoom": 1.1
+        },
+        "fx": {
+          "motionBlur": {
+            "direction": "horizontal",
+            "amount": 110
+          }
+        },
+        "note": "1-frame whip-out smear"
+      },
+      {
+        "id": "s15",
+        "start": "b5.04",
+        "end": "b5.2",
+        "source": {
+          "asset": "slot:low-angle",
+          "in": 0.5
+        },
+        "camera": {
+          "panFrom": [
+            0.0,
+            -0.15
+          ],
+          "pan": [
+            -0.0,
+            0.15
+          ],
+          "zoom": [
+            1.4,
+            1.25
+          ],
+          "ease": "out",
+          "overscan": 1.0,
+          "anchor": [
+            0.5,
+            0.72
+          ]
+        },
+        "fx": {
+          "motionBlur": {
+            "direction": "vertical",
+            "amount": 70
+          },
+          "trail": 0.3
+        },
+        "note": "vertical whip landing"
+      },
+      {
+        "id": "s16",
+        "start": "b5.2",
+        "end": "b7",
+        "source": {
+          "asset": "slot:low-angle",
+          "in": 0.57
+        },
+        "camera": {
+          "zoom": 1.25,
+          "anchor": [
+            0.5,
+            0.72
+          ]
+        },
+        "note": "worm's-eye legs; title mid-frame"
+      },
+      {
+        "id": "s17",
+        "start": "b7",
+        "end": "b11",
+        "source": {
+          "asset": "slot:stand-wide",
+          "in": 2.0
+        },
+        "camera": {
+          "roll": -4,
+          "zoom": [
+            1.0,
+            1.06
+          ],
+          "ease": "linear"
+        },
+        "fx": {
+          "zoomBlur": 0.15
+        },
+        "layers": [
+          {
+            "source": {
+              "asset": "slot:temple",
+              "in": 1.0
+            },
+            "box": [
+              0.05,
+              0.066,
+              0.54,
+              0.337
+            ],
+            "start": "b7.24",
+            "end": "b10.4",
+            "border": {
+              "width": 0.006,
+              "color": "#FFFFFF",
+              "bottom": 0.0
+            },
+            "shadow": 0.35,
+            "enter": {
+              "type": "slide-right",
+              "duration": 0.11
+            },
+            "camera": {
+              "zoom": [
+                1.0,
+                1.05
+              ]
+            }
+          },
+          {
+            "source": {
+              "asset": "slot:low-angle",
+              "in": 2.2
+            },
+            "box": [
+              0.05,
+              0.066,
+              0.54,
+              0.337
+            ],
+            "start": "b10.4",
+            "end": "b11",
+            "border": {
+              "width": 0.006,
+              "color": "#FFFFFF",
+              "bottom": 0.0
+            },
+            "shadow": 0.35,
+            "camera": {
+              "zoom": [
+                1.0,
+                1.02
+              ]
+            }
+          },
+          {
+            "source": {
+              "asset": "slot:top-down",
+              "in": 0.5
+            },
+            "box": [
+              0.417,
+              0.297,
+              0.527,
+              0.336
+            ],
+            "start": "b8.24",
+            "end": "b10.4",
+            "border": {
+              "width": 0.006,
+              "color": "#FFFFFF",
+              "bottom": 0.0
+            },
+            "shadow": 0.35,
+            "enter": {
+              "type": "slide-left",
+              "duration": 0.11
+            },
+            "camera": {
+              "zoom": [
+                1.0,
+                1.04
+              ]
+            }
+          },
+          {
+            "source": {
+              "asset": "slot:head-turn",
+              "in": 0.2
+            },
+            "box": [
+              0.417,
+              0.297,
+              0.527,
+              0.336
+            ],
+            "start": "b10.4",
+            "end": "b11",
+            "border": {
+              "width": 0.006,
+              "color": "#FFFFFF",
+              "bottom": 0.0
+            },
+            "shadow": 0.35
+          },
+          {
+            "source": {
+              "asset": "slot:sneaker",
+              "in": 3.0
+            },
+            "box": [
+              0.061,
+              0.547,
+              0.536,
+              0.305
+            ],
+            "start": "b9.24",
+            "end": "b11",
+            "border": {
+              "width": 0.006,
+              "color": "#FFFFFF",
+              "bottom": 0.022
+            },
+            "shadow": 0.35,
+            "enter": {
+              "type": "slide-up",
+              "duration": 0.11
+            },
+            "camera": {
+              "zoom": [
+                1.6,
+                1.65
+              ],
+              "anchor": [
+                0.55,
+                0.6
+              ]
+            }
+          },
+          {
+            "source": {
+              "asset": "slot:head-turn",
+              "in": 0.9
+            },
+            "box": [
+              0.394,
+              0.617,
+              0.55,
+              0.325
+            ],
+            "start": "b10.24",
+            "end": "b11",
+            "border": {
+              "width": 0.006,
+              "color": "#FFFFFF",
+              "bottom": 0.0
+            },
+            "shadow": 0.35,
+            "enter": {
+              "type": "slide-left",
+              "duration": 0.11
+            }
+          }
+        ],
+        "note": "collage: cards land on b7.24, b8.24, b9.24, b10.24; two swap content at b10.4"
+      },
+      {
+        "id": "s18",
+        "start": "b11",
+        "end": "b11.2",
+        "source": {
+          "asset": "slot:spin",
+          "in": 0.5
+        },
+        "camera": {
+          "roll": [
+            18,
+            0
+          ],
+          "zoom": [
+            1.3,
+            1.0
+          ],
+          "ease": "out"
+        },
+        "fx": {
+          "zoomBlur": 0.5,
+          "trail": 0.4
+        },
+        "note": "spin-in landing"
+      },
+      {
+        "id": "s19",
+        "start": "b11.2",
+        "end": "b13",
+        "source": {
+          "asset": "slot:spin",
+          "in": 0.58
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.03
+          ]
+        }
+      },
+      {
+        "id": "s20",
+        "start": "b13",
+        "end": "b13.12",
+        "source": {
+          "asset": "slot:spin",
+          "in": 1.33,
+          "matte": "slot:spin-matte"
+        },
+        "camera": {
+          "zoom": [
+            1.15,
+            1.03
+          ],
+          "ease": "out"
+        },
+        "fx": {
+          "motionBlur": {
+            "direction": "horizontal",
+            "amount": 40
+          }
+        },
+        "background": "#000000",
+        "note": "same spin continues; background drops to black"
+      },
+      {
+        "id": "s21",
+        "start": "b13.12",
+        "end": "b15",
+        "source": {
+          "asset": "slot:spin",
+          "in": 1.38,
+          "matte": "slot:spin-matte"
+        },
+        "camera": {
+          "zoom": [
+            1.03,
+            1.07
+          ]
+        },
+        "background": "#000000"
+      },
+      {
+        "id": "s22",
+        "start": "b15",
+        "end": "b15.2",
+        "source": {
+          "asset": "slot:walk",
+          "in": 0.3
+        },
+        "camera": {
+          "zoom": [
+            1.45,
+            1.06
+          ],
+          "ease": "out"
+        },
+        "fx": {
+          "zoomBlur": 0.6,
+          "trail": 0.3
+        }
+      },
+      {
+        "id": "s23",
+        "start": "b15.2",
+        "end": "b17",
+        "source": {
+          "asset": "slot:walk",
+          "in": 0.38
+        },
+        "camera": {
+          "zoom": [
+            1.06,
+            1.0
+          ],
+          "handheld": {
+            "amp": 0.004,
+            "freq": 1.2
+          }
+        }
+      },
+      {
+        "id": "s24",
+        "start": "b17",
+        "end": "b18.36",
+        "source": {
+          "asset": "slot:smirk",
+          "in": 0.3
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.08
+          ]
+        },
+        "note": "hard cut; the music breaks before the drop"
+      },
+      {
+        "id": "s25",
+        "start": "b18.36",
+        "end": "b19",
+        "source": {
+          "asset": "slot:smirk",
+          "in": 0.9
+        },
+        "camera": {
+          "zoom": [
+            1.12,
+            1.18
+          ]
+        },
+        "note": "DROP: cream flash-cut, word 1"
+      },
+      {
+        "id": "s26",
+        "start": "b19",
+        "end": "b20",
+        "source": {
+          "asset": "slot:top-down",
+          "in": 1.5
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.05
+          ]
+        },
+        "note": "cream flash-cut, word 2"
+      },
+      {
+        "id": "s27",
+        "start": "b20",
+        "end": "b21",
+        "source": {
+          "asset": "slot:walk",
+          "in": 1.0
+        },
+        "fx": {
+          "exposure": -1,
+          "saturation": 0
+        },
+        "tile": {
+          "cols": 3,
+          "rows": 1,
+          "mirror": "none",
+          "offset": 0,
+          "stagger": 0.033,
+          "gap": 0,
+          "enter": "slide-down"
+        },
+        "note": "black frame, then three walk strips wipe in and hold as clones"
+      },
+      {
+        "id": "s28",
+        "start": "b21",
+        "end": "b22",
+        "source": {
+          "asset": "slot:low-angle",
+          "in": 2.5
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.05
+          ]
+        },
+        "note": "cream flash-cut"
+      },
+      {
+        "id": "s29",
+        "start": "b22",
+        "end": "b22.16",
+        "source": {
+          "asset": "slot:head-turn",
+          "in": 0.45
+        },
+        "camera": {
+          "panFrom": [
+            -0.18,
+            0.0
+          ],
+          "pan": [
+            0.18,
+            -0.0
+          ],
+          "zoom": [
+            1.2,
+            1.0
+          ],
+          "ease": "out",
+          "overscan": 1.0
+        },
+        "fx": {
+          "motionBlur": {
+            "direction": "horizontal",
+            "amount": 80
+          },
+          "trail": 0.3
+        },
+        "note": "whip landing"
+      },
+      {
+        "id": "s30",
+        "start": "b22.16",
+        "end": "b23",
+        "source": {
+          "asset": "slot:head-turn",
+          "in": 0.52
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.03
+          ]
+        }
+      },
+      {
+        "id": "s31",
+        "start": "b23",
+        "end": "b24",
+        "source": {
+          "asset": "slot:detail",
+          "in": 0.2
+        },
+        "camera": {
+          "roll": [
+            0,
+            -4
+          ],
+          "zoom": [
+            1.0,
+            1.06
+          ],
+          "shake": {
+            "amp": 0.01,
+            "freq": 8,
+            "from": "b23.08",
+            "to": "b23.92",
+            "decay": true
+          }
+        },
+        "note": "cream flash-cut, zip pull with shake"
+      },
+      {
+        "id": "s32",
+        "start": "b24",
+        "end": "b24.16",
+        "source": {
+          "asset": "slot:throne",
+          "in": 0.0
+        },
+        "camera": {
+          "zoom": [
+            1.4,
+            1.0
+          ],
+          "ease": "out"
+        },
+        "fx": {
+          "zoomBlur": 0.6,
+          "trail": 0.3
+        }
+      },
+      {
+        "id": "s33",
+        "start": "b24.16",
+        "end": "b26",
+        "source": {
+          "asset": "slot:throne",
+          "in": 0.07
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.03
+          ]
+        },
+        "note": "walks to the chair and sits"
+      },
+      {
+        "id": "s34",
+        "start": "b26",
+        "end": "b26.16",
+        "source": {
+          "asset": "slot:head-turn",
+          "in": 0.3,
+          "matte": "slot:head-turn-matte"
+        },
+        "camera": {
+          "panFrom": [
+            0.18,
+            0.0
+          ],
+          "pan": [
+            -0.18,
+            -0.0
+          ],
+          "zoom": [
+            1.2,
+            1.0
+          ],
+          "ease": "out",
+          "overscan": 1.0
+        },
+        "fx": {
+          "motionBlur": {
+            "direction": "horizontal",
+            "amount": 80
+          },
+          "trail": 0.3
+        },
+        "background": "#000000",
+        "note": "whip landing: head turn on black"
+      },
+      {
+        "id": "s35",
+        "start": "b26.16",
+        "end": "b27",
+        "source": {
+          "asset": "slot:head-turn",
+          "in": 0.37,
+          "matte": "slot:head-turn-matte"
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.03
+          ]
+        },
+        "background": "#000000"
+      },
+      {
+        "id": "s36",
+        "start": "b27",
+        "end": "b29",
+        "source": {
+          "asset": "slot:walk",
+          "in": 2.5
+        },
+        "camera": {
+          "zoom": [
+            1.08,
+            1.0
+          ]
+        },
+        "note": "cream flash-cut, walk-in under the third word"
+      },
+      {
+        "id": "s37",
+        "start": "b29",
+        "end": "b29.16",
+        "source": {
+          "asset": "slot:temple",
+          "in": 2.0
+        },
+        "camera": {
+          "zoom": [
+            1.35,
+            1.0
+          ],
+          "ease": "out"
+        },
+        "fx": {
+          "zoomBlur": 0.5,
+          "trail": 0.3
+        }
+      },
+      {
+        "id": "s38",
+        "start": "b29.16",
+        "end": "b30",
+        "source": {
+          "asset": "slot:temple",
+          "in": 2.07
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.04
+          ]
+        }
+      },
+      {
+        "id": "s39",
+        "start": "b30",
+        "end": "b30.12",
+        "source": {
+          "asset": "slot:top-down",
+          "in": 2.5
+        },
+        "camera": {
+          "zoom": [
+            1.1,
+            1.0
+          ]
+        },
+        "fx": {
+          "blur": [
+            12,
+            3
+          ]
+        },
+        "note": "defocus landing"
+      },
+      {
+        "id": "s40",
+        "start": "b30.12",
+        "end": "b31",
+        "source": {
+          "asset": "slot:top-down",
+          "in": 2.55
+        },
+        "camera": {
+          "roll": [
+            0,
+            4
+          ],
+          "zoom": [
+            1.0,
+            1.08
+          ]
+        }
+      },
+      {
+        "id": "s41",
+        "start": "b31",
+        "end": "b31.8",
+        "source": {
+          "asset": "slot:sneaker",
+          "in": 3.5
+        },
+        "camera": {
+          "zoom": [
+            1.8,
+            1.85
+          ],
+          "anchor": [
+            0.55,
+            0.6
+          ]
+        },
+        "note": "cream flash-cut, laces"
+      },
+      {
+        "id": "s42",
+        "start": "b31.8",
+        "end": "b32",
+        "source": {
+          "asset": "slot:stand-wide",
+          "in": 3.5
+        },
+        "camera": {
+          "roll": -4
+        },
+        "note": "5-frame insert"
+      },
+      {
+        "id": "s43",
+        "start": "b32",
+        "end": "b32.16",
+        "source": {
+          "asset": "slot:smirk",
+          "in": 2.0
+        },
+        "camera": {
+          "zoom": [
+            1.25,
+            1.0
+          ],
+          "ease": "out"
+        },
+        "fx": {
+          "blur": [
+            10,
+            0
+          ]
+        },
+        "note": "defocus landing"
+      },
+      {
+        "id": "s44",
+        "start": "b32.16",
+        "end": "b33",
+        "source": {
+          "asset": "slot:smirk",
+          "in": 2.07
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.04
+          ]
+        }
+      },
+      {
+        "id": "s45",
+        "start": "b33",
+        "end": "b33.2",
+        "source": {
+          "asset": "slot:head-turn",
+          "in": 1.6
+        },
+        "camera": {
+          "panFrom": [
+            -0.18,
+            0.0
+          ],
+          "pan": [
+            0.18,
+            -0.0
+          ],
+          "zoom": [
+            1.2,
+            1.0
+          ],
+          "ease": "out",
+          "overscan": 1.0
+        },
+        "fx": {
+          "motionBlur": {
+            "direction": "horizontal",
+            "amount": 80
+          },
+          "trail": 0.3
+        },
+        "note": "whip landing"
+      },
+      {
+        "id": "s46",
+        "start": "b33.2",
+        "end": "b34",
+        "source": {
+          "asset": "slot:head-turn",
+          "in": 1.68
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.02
+          ]
+        }
+      },
+      {
+        "id": "s47",
+        "start": "b34",
+        "end": "b34.2",
+        "source": {
+          "asset": "slot:throne",
+          "in": 3.0
+        },
+        "camera": {
+          "zoom": [
+            1.4,
+            1.0
+          ],
+          "ease": "out"
+        },
+        "fx": {
+          "zoomBlur": 0.6,
+          "trail": 0.3
+        }
+      },
+      {
+        "id": "s48",
+        "start": "b34.2",
+        "end": "b35",
+        "source": {
+          "asset": "slot:throne",
+          "in": 3.08
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.02
+          ]
+        },
+        "note": "leans back in the chair"
+      },
+      {
+        "id": "s49",
+        "start": "b35",
+        "end": "b38.24",
+        "source": {
+          "asset": "slot:throne",
+          "in": 4.0
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.05
+          ],
+          "ease": "inout"
+        },
+        "note": "cream flash-cut to the frontal 'throne' hold"
+      }
+    ],
+    "flashes": [
+      {
+        "at": "b18.36",
+        "duration": 0.1,
+        "color": "#F3EACD",
+        "intensity": 0.9,
+        "overText": true
+      },
+      {
+        "at": "b19",
+        "duration": 0.09,
+        "color": "#F3EACD",
+        "intensity": 0.85,
+        "overText": true
+      },
+      {
+        "at": "b21",
+        "duration": 0.12,
+        "color": "#F3EACD",
+        "intensity": 0.8,
+        "overText": true
+      },
+      {
+        "at": "b23",
+        "duration": 0.09,
+        "color": "#F3EACD",
+        "intensity": 0.8,
+        "overText": true
+      },
+      {
+        "at": "b27",
+        "duration": 0.13,
+        "color": "#F3EACD",
+        "intensity": 0.85,
+        "overText": true
+      },
+      {
+        "at": "b31",
+        "duration": 0.13,
+        "color": "#F3EACD",
+        "intensity": 0.8,
+        "overText": true
+      },
+      {
+        "at": "b35",
+        "duration": 0.2,
+        "color": "#F3EACD",
+        "intensity": 0.85,
+        "overText": true
+      }
+    ],
+    "text": [
+      {
+        "text": "NOTHING NEW",
+        "start": "b1.28",
+        "end": "b3.04",
+        "font": "League Gothic",
+        "size": 0.073,
+        "color": "#FEFBF3",
+        "shadow": 0.015,
+        "position": [
+          0.5,
+          0.793
+        ],
+        "align": "center",
+        "tracking": 0.02,
+        "anim": "pop",
+        "exit": "blur",
+        "uppercase": true,
+        "italic": true
+      },
+      {
+        "text": "SAME OLD DAY",
+        "start": "b5.2",
+        "end": "b7",
+        "font": "League Gothic",
+        "size": 0.058,
+        "color": "#FEFBF3",
+        "shadow": 0.015,
+        "position": [
+          0.5,
+          0.555
+        ],
+        "align": "center",
+        "tracking": 0.02,
+        "anim": "pop",
+        "exit": "none",
+        "uppercase": true,
+        "italic": true
+      },
+      {
+        "text": "IS THAT ALL?",
+        "start": "b17.2",
+        "end": "b18.36",
+        "font": "League Gothic",
+        "size": 0.066,
+        "color": "#FEFBF3",
+        "shadow": 0.015,
+        "position": [
+          0.5,
+          0.824
+        ],
+        "align": "center",
+        "tracking": 0.02,
+        "anim": "pop",
+        "exit": "none",
+        "uppercase": true,
+        "italic": true
+      },
+      {
+        "text": "BORN",
+        "start": "b18.44",
+        "end": "b19",
+        "font": "League Gothic",
+        "size": 0.165,
+        "color": "#FEFBF3",
+        "shadow": 0.015,
+        "position": [
+          0.5,
+          0.766
+        ],
+        "align": "center",
+        "tracking": 0.02,
+        "anim": "slam",
+        "exit": "none",
+        "uppercase": true,
+        "italic": true
+      },
+      {
+        "text": "DIFFERENT",
+        "start": "b19",
+        "end": "b20",
+        "font": "League Gothic",
+        "size": 0.117,
+        "color": "#FEFBF3",
+        "shadow": 0.015,
+        "position": [
+          0.5,
+          0.75
+        ],
+        "align": "center",
+        "tracking": 0.02,
+        "anim": "slam",
+        "exit": "none",
+        "uppercase": true,
+        "italic": true
+      },
+      {
+        "text": "PERIOD",
+        "start": "b27.28",
+        "end": "b29",
+        "font": "League Gothic",
+        "size": 0.099,
+        "color": "#FEFBF3",
+        "shadow": 0.015,
+        "position": [
+          0.5,
+          0.832
+        ],
+        "align": "center",
+        "tracking": 0.02,
+        "anim": "pop",
+        "exit": "none",
+        "uppercase": true,
+        "italic": true
+      },
+      {
+        "text": "CROWN ACCEPTED",
+        "start": "b35.48",
+        "end": "b38.24",
+        "font": "League Gothic",
+        "size": 0.058,
+        "color": "#FEFBF3",
+        "shadow": 0.015,
+        "position": [
+          0.5,
+          0.125
+        ],
+        "align": "center",
+        "tracking": 0.02,
+        "anim": "pop",
+        "exit": "none",
+        "uppercase": true,
+        "italic": true
+      }
+    ],
+    "sfx": [
+      {
+        "at": 0.0,
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": 0.45,
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b0.92",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b1.28",
+        "sound": "hit",
+        "gainDb": -12
+      },
+      {
+        "at": "b2.8",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b4.88",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b5.2",
+        "sound": "hit",
+        "gainDb": -12
+      },
+      {
+        "at": "b7.24",
+        "sound": "tick",
+        "gainDb": -10
+      },
+      {
+        "at": "b8.24",
+        "sound": "tick",
+        "gainDb": -10
+      },
+      {
+        "at": "b9.24",
+        "sound": "tick",
+        "gainDb": -10
+      },
+      {
+        "at": "b10.24",
+        "sound": "tick",
+        "gainDb": -10
+      },
+      {
+        "at": "b10.88",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b12.88",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b14.88",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b17",
+        "sound": "riser",
+        "gainDb": -14
+      },
+      {
+        "at": "b17.2",
+        "sound": "hit",
+        "gainDb": -12
+      },
+      {
+        "at": "b18.36",
+        "sound": "boom",
+        "gainDb": -8
+      },
+      {
+        "at": "b19",
+        "sound": "hit",
+        "gainDb": -10
+      },
+      {
+        "at": "b19.88",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b21",
+        "sound": "hit",
+        "gainDb": -12
+      },
+      {
+        "at": "b21.88",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b23",
+        "sound": "hit",
+        "gainDb": -12
+      },
+      {
+        "at": "b23.88",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b25.88",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b27",
+        "sound": "hit",
+        "gainDb": -12
+      },
+      {
+        "at": "b27.28",
+        "sound": "hit",
+        "gainDb": -14
+      },
+      {
+        "at": "b28.88",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b29.88",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b31",
+        "sound": "hit",
+        "gainDb": -12
+      },
+      {
+        "at": "b31.88",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b32.88",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b33.88",
+        "sound": "whoosh",
+        "gainDb": -14
+      },
+      {
+        "at": "b35",
+        "sound": "hit",
+        "gainDb": -10
+      },
+      {
+        "at": "b35.48",
+        "sound": "boom",
+        "gainDb": -10
+      }
+    ]
+  },
+  "prompt": "@image1 is the hero: the same face, hair, eyewear (if any) and outfit in every single shot. Sell them as ordinary first — one plain everyday place, casual phone framing, two modest captions — then flip to full hype at the drop. Build it from short single-move clips at extreme angles (shoe on the ground, worm's-eye tower, bird's-eye stare, nose-bridge push, spin, head turn, walk-in, sitting in a chair like a throne), and let the edit carry the energy with blur landings, flash-cuts on the hits, card collages and cloned tiles.",
+  "author": "open-katana"
+}

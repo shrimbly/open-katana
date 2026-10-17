@@ -1,0 +1,24 @@
+{
+  "slug": "golden-hour",
+  "title": "Golden Hour",
+  "description": "Soft golden-hour hero edit: dreamy warm grade, soft white flashes, gentle handheld drift, film grain and elegant serif captions.",
+  "category": "personalized_edits",
+  "format": { "aspect": "9:16", "durationSec": 14, "fps": 30 },
+  "inputs": { "images": { "min": 1, "max": 5, "title": "Your character (face and full outfit)" }, "music": "optional", "instructionsMaxChars": 2000 },
+  "recipe": {
+    "look": "warm-film to dreamy grade, lifted blacks, halation glow, medium grain",
+    "fonts": ["Playfair Display", "Cormorant Garamond"],
+    "palette": ["#F6C177", "#FFF4E0", "#3A2418"],
+    "energy": "Calm: ~1 cut per second, soft 0.15 s white flashes on phrase changes, handheld drift on every shot, no hard shake.",
+    "structure": [
+      { "at": "0–25%", "role": "introduction", "guidance": "Back-lit walk at golden hour, hair catching the sun." },
+      { "at": "25–70%", "role": "moments", "guidance": "Laughs, glances over the shoulder, spinning slowly, close-ups of outfit details." },
+      { "at": "70–100%", "role": "payoff", "guidance": "Slow turn to camera with a smile; caption fades in." }
+    ],
+    "titles": "Lower-case italic serif captions, fade or rise animation, generous letter spacing.",
+    "music": "Indie or lo-fi with a gentle beat; cut on phrase starts rather than every beat.",
+    "generation": "Locations: sunlit field, rooftop, seaside promenade. Slow 3 s I2V clips with gentle camera moves."
+  },
+  "prompt": "@image1 has the whole golden hour to themselves; keep their face and outfit exactly.",
+  "author": "open-katana"
+}

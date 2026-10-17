@@ -1,0 +1,127 @@
+{
+  "slug": "night-stare",
+  "title": "Night Stare",
+  "description": "Lone-wolf night aura edit (11 s, 4:3, 24 fps): a hooded figure training while the city sleeps, cold teal and sodium-green grade with black-and-white inserts, uncanny eye beats (x-ray flicker, red-eye strip, a white iris strobed open on the drop) and a closing red serif line, one word at a time.",
+  "category": "personalized_edits",
+  "format": { "aspect": "4:3", "durationSec": 11, "fps": 24 },
+  "inputs": {
+    "images": { "min": 1, "max": 5, "title": "Your character (clear face first; a back or full-body photo helps)" },
+    "music": "optional",
+    "instructionsMaxChars": 2000
+  },
+  "recipe": {
+    "look": "Cold night realism. Colour shots: teal-night (dim teal-green concrete, sodium yellow-green lamps, navy sky, crushed blacks), mild grain, soft bloom only on practical lights. Four shots go monochrome: the elevator and the escalator finale (bw-contrast), the running feet (bleach, almost no colour) and one true 1-bit threshold face. Effect inserts: a bones-on-black x-ray screened over the back with a cyan duotone wash, a cream tint and a difference-blend dissolve back to the skin; an inverted high-key freeze with a normal-tone eye strip and red irises; a white bloom with a light leak from the left and a warm-gold bloom. The eye extreme close-up keeps the subject's natural skin tone, warm (no look, slightly desaturated). Our looks: teal-night (base), bw-contrast, bleach, duotone, tint and difference/screen layers on the x-ray frames.",
+    "fonts": ["Playfair Display"],
+    "palette": ["#0A0603", "#223124", "#017E72", "#F7FBF0", "#828D57", "#081319", "#E7EFBB", "#EB0B0E", "#7B0005"],
+    "energy": "Measured on the 11.0 s reference (264 frames at 24 fps). 14 camera set-ups and 13 hard cuts between them: 1.2 cuts/s, mean set-up 0.79 s (our detector reported 20 cuts, 1.8/s, because glow stutters and inserts register as cuts). Tempo tracked at 120 BPM (mean beat spacing 0.52 s, bars of about 2.07 s, downbeats at 0.09, 2.14, 4.30, 6.30, 8.39 and 10.44 s). Six structural cuts land within a frame of a beat (b0, b3, b6, b15, b18 and the drop one frame after b12); the rest sit on off-beat hits (0.49, 2.65, 3.29–3.38, 9.83 s). No hard white flashes (0/s; the detector's 0.27/s were the x-ray and invert inserts). Instead 6 brightness events in 11 s (0.55/s): x-ray insert 4 frames (0.17 s), tattoo glow 1 frame, glare bloom 1 frame + warm glow 2 frames on a triple hit, inverted eye-strip freeze 6 frames (0.25 s). The drop is a 1-frame black/eye strobe over 7 frames, then a 3-frame hold (0.42 s in all). Camera is locked or barely handheld until 8.8 s; the last 2.2 s are handheld (roll up to ±3°, a shaking POV chase). Final text: 4 words at 4–5 frames each (0.17–0.21 s).",
+    "structure": [
+      { "at": "0–0.54 s (b0–b0.86)", "role": "x-ray hook", "guidance": "Locked back view of the hero against a dim wall. On the first hit the body flickers into a glowing x-ray for four frames (white bones, cyan wash, cream bones, half-inverted dissolve back), then one frame of cyan-tinted glow on the next hit." },
+      { "at": "0.54–2.75 s (b0.86–b5.16)", "role": "surveillance", "guidance": "Seen through a round scope (soft circular window, black around it): the hooded hero shadowboxing alone in a dark wood, slow drift. Cut on b3 back to the back view, now holding a jump rope, camera tilting down slowly." },
+      { "at": "2.75–3.67 s (b5.16–b6.8)", "role": "glare", "guidance": "Eyes over a raised forearm, window grid behind. Glow stutter on the triple hit (white bloom with a leak from the left, clean, warm-gold bloom, clean), then a frozen inverted frame where only a strip around the eyes keeps its normal tone, with red irises." },
+      { "at": "3.67–6.33 s (b6.8–b12.06)", "role": "breath", "guidance": "Calm, empty-feeling night: hooded runner climbing outdoor stairs (wide, static), an empty lamp-lit ramp, then black-and-white: the hero waits in an elevator as the doors open on white light." },
+      { "at": "6.33–6.75 s (b12.06–b12.85)", "role": "drop", "guidance": "On the biggest hit: single black frames alternate with an extreme close-up of one eye opening, until it holds for three frames, open and milky white." },
+      { "at": "6.75–8.79 s (b12.85–b16.76)", "role": "the stare", "guidance": "Hold 1.1 s on a direct stare into the lens, face almost still. Cut on b15 to a low angle of the hooded hero passing under twin glowing street lamps." },
+      { "at": "8.79–10.29 s (b16.76–b19.7)", "role": "chase", "guidance": "Energy rises: a 1-bit threshold version of the stare with handheld roll, ground-level running feet on b18, then a shaking, motion-blurred over-the-shoulder chase up a stairwell." },
+      { "at": "10.29–11.0 s (b19.7–end)", "role": "statement", "guidance": "Black-and-white wide of the hero riding an escalator into a bright canopy; a red four-word line, one word at a time, centred." }
+    ],
+    "titles": "Only one phrase, at the very end: four short uppercase words shown one at a time (4–5 frames each), centred at mid-frame, pure red (#EB0B0E) bold transitional serif, cap height about 0.105 of frame height, no outline, shadow or glow, hard on and off (anim none, exit none), over a black-and-white shot. Use Playfair Display at weight 700. Write a short line about discipline or solitude in the user's language; keep words short enough that the longest fits in about half the frame width.",
+    "music": "Dark, sparse ~120 BPM beat with three heavy impacts (about 0.1, 3.3 and 6.3 s, the last the strongest) and a dense, loud final 1.6 s. Keep the reference track when it is supplied; with other music put the drop strobe on its biggest hit and the text on its last bar.",
+    "generation": "Build one accepted hero keyframe from @image1, then compose each set-up from it (still.compose), and animate with minimax-h3-i2v at its native 24 fps (most clips need 1–3 s). Hooded shots need only outfit and build, so clip.r2v with the outfit and location references is fine. The empty street is a still.generate plate. The eye opening is a first/last-frame clip between a closed-eye and a white-iris still. The x-ray is a bones-on-black still made from the back keyframe, screened over the back clip in the edit. The scope circle, the eye strip, the red irises, the threshold and the strobe are all drawn by the renderer, so generate clean, lightly graded shots. Frame the glare with the eye line at about two thirds of the height and the eyes at about 35% and 50% of the width (the skeleton's eye-strip and iris boxes sit there; move them if your clip differs). MiniMax H3's licence excludes use of the open weights (including on Comfy Cloud) in the United States, European Union, United Kingdom and South Korea; there, or when the user wants Apache-2.0 models only, use wan22-14b-i2v for the i2v slots (16 fps, so set interpolate \"blend\" on slow holds), wan22-14b-flf for the eye opening and a still.compose keyframe animated with wan22-14b-i2v in place of each r2v slot."
+  },
+  "slots": [
+    { "id": "back", "kind": "clip", "description": "The hero from behind, bare back or tank top, centred against a dim teal-green concrete wall; at first still, later arms out holding a jump rope.", "operation": "still.compose → clip.i2v (minimax-h3-i2v)", "guidance": "Locked camera, symmetrical, hero fills the lower two thirds. 3 s: the first second motionless, then the arms open and lift the rope handles. A visible tattoo or strong back detail helps the x-ray beat. Used for the opening, the x-ray base, the glow frame and the rope take." },
+    { "id": "xray", "kind": "graphic", "description": "The back keyframe re-drawn as a glowing x-ray: near-white skeleton and ribcage inside a faint translucent body outline, on pure black.", "operation": "still.compose (from the accepted back keyframe)", "guidance": "Pure black background and black wherever there is no bone or outline: the edit screens it over the back clip, so only the bright parts show. Keep the silhouette pixel-aligned with the back keyframe." },
+    { "id": "scope", "kind": "clip", "description": "Wide night shot of the hooded hero shadowboxing alone in a dark wooded clearing.", "operation": "still.compose → clip.i2v (minimax-h3-i2v)", "guidance": "Keep the whole figure inside a centred circle about 60% of the frame height (the edit masks everything outside it to black). Quick jabs, weight shifting; 1–2 s." },
+    { "id": "glare", "kind": "clip", "description": "Close-up: the hero looks over a raised forearm so that only hair and eyes show, a window grid behind, cool light.", "operation": "still.compose → clip.i2v (minimax-h3-i2v)", "guidance": "Eye line at about two thirds of the frame height, eyes at about 35% and 50% of the width, locked on the lens, eyebrows low; almost no motion (a breath, a blink at most). 1 s is enough; it also supplies the inverted eye-strip freeze." },
+    { "id": "stairs", "kind": "clip", "description": "The hooded hero runs up a concrete outdoor staircase at night under sodium lamps, camera following from below and behind.", "operation": "clip.r2v (minimax-h3-r2v)", "guidance": "3 s. The first part is used wide and steady; the end is cropped tight with added shake as the POV chase, so keep the hero centred and moving away from camera." },
+    { "id": "street", "kind": "still", "description": "Empty night plate: a street lamp above a sloped ramp with railings and dark trees, sodium yellow-green light.", "operation": "still.generate (z-image-turbo)", "guidance": "No people. Low-ish angle, lamp in the upper left third." },
+    { "id": "elevator", "kind": "clip", "description": "Black-and-white: the hooded hero from behind inside a steel elevator, the doors sliding open on blinding white light.", "operation": "clip.r2v (minimax-h3-r2v)", "guidance": "Locked camera, hero centred lower half; doors open over about 1 s." },
+    { "id": "eye", "kind": "clip", "description": "Extreme close-up of one of the hero's eyes: closed, then opening to reveal a milky white iris.", "operation": "clip.flf (minimax-h3-flf) between a closed-eye still and a white-iris still", "guidance": "Skin texture, skin tone and brow from @image1, warm light. At least 1.5 s with the eye fully open by 1.2 s: the drop plays its first 1.2 s at 4× under a frame strobe, then holds on 1.25 s." },
+    { "id": "stare", "kind": "clip", "description": "Medium close-up at night: the hero stares straight into the lens, lips slightly parted, a lit railing soft behind.", "operation": "still.compose → clip.i2v (minimax-h3-i2v)", "guidance": "The emotional centre: perfect likeness, no smile, almost no motion. 2.5 s; the tail is reused as the 1-bit threshold shot, where a slight head tilt and strong side light help." },
+    { "id": "lamps", "kind": "clip", "description": "Low angle against a deep navy sky: the hooded hero walks past under a pair of glowing street lamps.", "operation": "clip.r2v (minimax-h3-r2v)", "guidance": "Lamps upper centre with strong bloom; hero in the lower right, face mostly in shadow. 1 s." },
+    { "id": "run", "kind": "clip", "description": "Ground-level tracking shot of the hero's sneakers and trouser legs running on night asphalt, long shadows from a street light.", "operation": "clip.r2v (minimax-h3-r2v)", "guidance": "Feet and lane markings only, motion blur welcome. 1 s." },
+    { "id": "escalator", "kind": "clip", "description": "Black-and-white wide from behind: the hooded hero rides an escalator up toward a brightly lit glass-and-steel canopy.", "operation": "clip.r2v (minimax-h3-r2v)", "guidance": "Strong symmetric perspective, empty centre above the hero for the title words. 1 s, steady." }
+  ],
+  "skeleton": {
+    "canvas": { "width": 1440, "height": 1080, "fps": 24, "durationSec": 11 },
+    "audio": { "asset": "ref", "offset": 0 },
+    "finish": { "look": "none", "grain": 0.25, "vignette": 0.25, "letterbox": 0 },
+    "shots": [
+      { "id": "back-open", "start": 0, "end": "b0", "source": { "asset": "slot:back", "in": 0 }, "fx": { "look": "teal-night" } },
+      {
+        "id": "xray-1", "start": "b0", "end": "b0.06", "source": { "asset": "slot:back", "in": 0.08 }, "fx": { "look": "teal-night", "exposure": -0.05 },
+        "layers": [{ "source": { "asset": "slot:xray" }, "blend": "screen", "fx": { "glow": 0.5 } }],
+        "note": "x-ray flicker 1/4 on the first hit: white bones screened over the body"
+      },
+      {
+        "id": "xray-2", "start": "b0.06", "end": "b0.14", "source": { "asset": "slot:back", "in": 0.12 }, "fx": { "duotone": { "shadow": "#04574F", "highlight": "#8CF7E4" }, "exposure": 0.05 },
+        "layers": [{ "source": { "asset": "slot:xray" }, "blend": "screen", "fx": { "glow": 0.8, "glowColor": "#BFFFF4" } }],
+        "note": "cyan wash"
+      },
+      {
+        "id": "xray-3", "start": "b0.14", "end": "b0.22", "source": { "asset": "slot:back", "in": 0.17 }, "fx": { "duotone": { "shadow": "#04574F", "highlight": "#8CF7E4" } },
+        "layers": [{ "source": { "asset": "slot:xray" }, "blend": "screen", "fx": { "tint": { "color": "#F3E9B0", "amount": 0.7 }, "glow": 0.8, "glowColor": "#F3E9B0" } }],
+        "note": "cream bones"
+      },
+      {
+        "id": "xray-out", "start": "b0.22", "end": "b0.3", "source": { "asset": "slot:back", "in": 0.21 }, "fx": { "duotone": { "shadow": "#16324A", "highlight": "#F4E9DC" } },
+        "layers": [{ "source": { "asset": "slot:xray" }, "blend": "difference", "opacity": 0.55 }],
+        "note": "half-inverted dissolve back to the body: bones subtracted from the skin, blue wash"
+      },
+      { "id": "back-hold", "start": "b0.3", "end": "b0.8", "source": { "asset": "slot:back", "in": 0.25 }, "fx": { "look": "teal-night" } },
+      {
+        "id": "back-glow", "start": "b0.8", "end": "b0.86", "source": { "asset": "slot:back", "in": 0.5 }, "fx": { "look": "teal-night", "exposure": 0.1, "glow": 1, "glowColor": "#CFF6F2" },
+        "layers": [{ "source": { "asset": "slot:xray" }, "blend": "screen", "opacity": 0.25 }],
+        "note": "one-frame cyan glow on the 0.49 s hit"
+      },
+      {
+        "id": "scope", "start": "b0.86", "end": "b3", "source": { "asset": "slot:scope", "in": 0 },
+        "camera": { "zoom": [1, 1.12], "ease": "inout", "handheld": { "amp": 0.01, "freq": 1.1 } },
+        "fx": { "look": "teal-night", "exposure": -0.05, "vignette": 0.5, "mask": { "shape": "circle", "center": [0.49, 0.55], "size": [0.6, 0.6], "feather": 0.08, "color": "#0A0603" } },
+        "note": "round scope window; the content drifts inside a fixed circle"
+      },
+      { "id": "back-rope", "start": "b3", "end": "b5.16", "source": { "asset": "slot:back", "in": 1.2 }, "camera": { "pan": [0, -0.08], "ease": "linear" }, "fx": { "look": "teal-night" } },
+      { "id": "glare", "start": "b5.16", "end": "b5.88", "source": { "asset": "slot:glare", "in": 0 }, "fx": { "look": "teal-night" } },
+      { "id": "glare-bloom", "start": "b5.88", "end": "b5.94", "source": { "asset": "slot:glare", "in": 0.46 }, "fx": { "look": "teal-night", "exposure": 0.1, "glow": 0.9, "glowColor": "#EEF3FF", "leak": { "color": "#EEF3FF", "side": "left", "amount": 0.75 } }, "note": "white bloom and flare from the left" },
+      { "id": "glare-a", "start": "b5.94", "end": "b6", "source": { "asset": "slot:glare", "in": 0.5 }, "fx": { "look": "teal-night" } },
+      { "id": "glare-warm", "start": "b6", "end": "b6.2", "source": { "asset": "slot:glare", "in": 0.54 }, "fx": { "look": "teal-night", "exposure": 0.06, "glow": 0.75, "glowColor": "#FFB25E" }, "note": "warm-gold bloom" },
+      { "id": "glare-b", "start": "b6.2", "end": "b6.27", "source": { "asset": "slot:glare", "in": 0.62 }, "fx": { "look": "teal-night" } },
+      {
+        "id": "glare-invert", "start": "b6.27", "end": "b6.8", "source": { "asset": "slot:glare", "in": 0.67, "speed": 0 }, "fx": { "bw": true, "invert": true, "exposure": 0.15, "contrast": 1.6 },
+        "layers": [
+          { "window": true, "box": [0.3, 0.627, 0.245, 0.08], "fx": { "bw": true, "exposure": 0.15, "contrast": 1.15 } },
+          { "source": { "asset": "#C8101A" }, "box": [0.338, 0.651, 0.024, 0.032], "shape": "circle", "blend": "lighten", "opacity": 0.85 },
+          { "source": { "asset": "#C8101A" }, "box": [0.483, 0.655, 0.024, 0.032], "shape": "circle", "blend": "lighten", "opacity": 0.85 }
+        ],
+        "note": "6-frame inverted freeze; the eye strip keeps the normal picture and the irises turn red (move the boxes onto the generated eyes)"
+      },
+      { "id": "stairs-wide", "start": "b6.8", "end": "b8.33", "source": { "asset": "slot:stairs", "in": 0 }, "fx": { "look": "teal-night" } },
+      { "id": "street", "start": "b8.33", "end": "b10.16", "source": { "asset": "slot:street" }, "camera": { "zoom": [1, 1.03], "ease": "linear" }, "fx": { "look": "teal-night" } },
+      { "id": "elevator", "start": "b10.16", "end": "b12.06", "source": { "asset": "slot:elevator", "in": 0 }, "fx": { "look": "bw-contrast" } },
+      { "id": "drop-strobe", "start": "b12.06", "end": "b12.6", "source": { "asset": "slot:eye", "in": 0, "speed": 4 }, "fx": { "saturation": 0.9, "vignette": 0.25, "frameStrobe": { "every": 2, "on": 1, "color": "black" } }, "note": "the drop: black on frames 0, 2, 4, 6; the eye opens on frames 1, 3, 5" },
+      { "id": "eye-open", "start": "b12.6", "end": "b12.85", "source": { "asset": "slot:eye", "in": 1.25 }, "fx": { "saturation": 0.9, "glow": 0.25, "vignette": 0.25 } },
+      { "id": "stare", "start": "b12.85", "end": "b15", "source": { "asset": "slot:stare", "in": 0 }, "camera": { "handheld": { "amp": 0.002, "freq": 0.6 } }, "fx": { "look": "teal-night" } },
+      { "id": "lamps", "start": "b15", "end": "b16.76", "source": { "asset": "slot:lamps", "in": 0 }, "camera": { "zoom": [1.04, 1], "roll": [-1, 1], "ease": "inout", "handheld": { "amp": 0.003, "freq": 0.8 } }, "fx": { "look": "teal-night", "glow": 0.4, "glowColor": "#E7EFBB", "vignette": 0.35 } },
+      { "id": "stare-threshold", "start": "b16.76", "end": "b18", "source": { "asset": "slot:stare", "in": 1.3 }, "camera": { "zoom": [1.12, 1.05], "roll": [2, -1], "handheld": { "amp": 0.012, "freq": 1.4 } }, "fx": { "threshold": 0.42 }, "note": "true 1-bit black and white" },
+      { "id": "run", "start": "b18", "end": "b18.8", "source": { "asset": "slot:run", "in": 0 }, "camera": { "zoom": [1.12, 1], "shake": { "amp": 0.008, "freq": 7, "decay": false } }, "fx": { "look": "bleach", "saturation": 0.2 } },
+      { "id": "chase", "start": "b18.8", "end": "b19.7", "source": { "asset": "slot:stairs", "in": 2.2 }, "camera": { "zoom": [1.35, 1.6], "anchor": [0.5, 0.6], "roll": [0, -3.5], "shake": { "amp": 0.018, "freq": 5, "decay": false } }, "fx": { "look": "teal-night", "motionBlur": { "direction": "vertical", "amount": 14 } } },
+      { "id": "escalator", "start": "b19.7", "end": "b21.1", "source": { "asset": "slot:escalator", "in": 0 }, "camera": { "zoom": [1, 1.02], "ease": "linear" }, "fx": { "look": "bw-contrast" } }
+    ],
+    "flashes": [],
+    "text": [
+      { "text": "BUILT", "start": "b19.7", "end": "b20.04", "font": "Playfair Display", "weight": 700, "size": 0.105, "color": "#EB0B0E", "position": [0.5, 0.484], "anim": "none", "exit": "none", "uppercase": true },
+      { "text": "IN", "start": "b20.04", "end": "b20.46", "font": "Playfair Display", "weight": 700, "size": 0.105, "color": "#EB0B0E", "position": [0.5, 0.484], "anim": "none", "exit": "none", "uppercase": true },
+      { "text": "THE", "start": "b20.46", "end": "b20.9", "font": "Playfair Display", "weight": 700, "size": 0.105, "color": "#EB0B0E", "position": [0.5, 0.484], "anim": "none", "exit": "none", "uppercase": true },
+      { "text": "DARK", "start": "b20.9", "end": "b21.1", "font": "Playfair Display", "weight": 700, "size": 0.105, "color": "#EB0B0E", "position": [0.5, 0.484], "anim": "none", "exit": "none", "uppercase": true }
+    ],
+    "sfx": [
+      { "at": "b0", "sound": "glitch", "gainDb": -12 },
+      { "at": "b6.27", "sound": "glitch", "gainDb": -10 },
+      { "at": "b12.06", "sound": "boom", "gainDb": -6 },
+      { "at": "b18.8", "sound": "whoosh", "gainDb": -10 },
+      { "at": "b19.7", "sound": "hit", "gainDb": -8 }
+    ]
+  },
+  "prompt": "@image1 is a loner who trains while the city sleeps: hooded, always alone, lit by sodium street lamps and steel interiors. Keep their face, hair and build exactly as in the photo in every shot where they are recognisable. The edit is quiet night scenes (a back view against a concrete wall, shadowboxing seen through a scope, stairs, an elevator, an escalator into light) broken by short uncanny eye moments: an x-ray glimpse of the body, red eyes glowing in a dark strip, one eye opening pure white on the drop. It closes on a four-word red line about discipline.",
+  "author": "open-katana"
+}

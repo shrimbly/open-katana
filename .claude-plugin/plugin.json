@@ -1,0 +1,16 @@
+{
+  "name": "open-katana",
+  "version": "0.1.0",
+  "description": "Remix reference edits — aura-farming edits especially — with your own character, on open models running on your ComfyUI (local, remote GPU or Comfy Cloud). Type /katana.",
+  "author": { "name": "open-katana contributors" },
+  "homepage": "https://github.com/shrimbly/open-katana",
+  "repository": "https://github.com/shrimbly/open-katana",
+  "license": "MIT",
+  "keywords": ["video", "editing", "comfyui", "aura edit", "mcp", "wan", "qwen-image-edit"],
+  "mcpServers": {
+    "open-katana": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/bin/mcp.mjs"]
+    }
+  }
+}

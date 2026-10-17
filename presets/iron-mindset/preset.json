@@ -1,0 +1,1737 @@
+{
+  "slug": "iron-mindset",
+  "title": "Iron Mindset",
+  "description": "Black-and-white athlete mindset montage: a spoken-word intro set as small caps and italic serif asides, then a trap drop with giant translucent numerals and title words, kit colour kept in grey frames, blue duotone and gold accents, glitch and flash frames, split screens and a name card to close.",
+  "category": "personalized_edits",
+  "format": {
+    "aspect": "16:9",
+    "durationSec": 27.4,
+    "fps": 24
+  },
+  "inputs": {
+    "images": {
+      "min": 1,
+      "max": 10,
+      "title": "Your athlete (face, build and kit), plus optional teammates, venue or trophies"
+    },
+    "music": "optional",
+    "instructionsMaxChars": 2000
+  },
+  "recipe": {
+    "look": "Monochrome-first sports documentary in a 2.40:1 letterbox (140 px bars at 1080p), light grain, soft vignette. bw-contrast for the struggle beats (deep blacks, bright speculars); bleach for muted-colour celebration memories; keepColor on the kit colour (#15319B in the skeleton; set it to the user's kit) so action shots go grey around the jersey; blue duotone (shadow #06142D, highlight #A9BFE8) for glory faces, plus posterize 3 for the two-tone action and detail beats; one gold duotone insert (#120400 → #F7A35C) with an amber glow (glowColor #FFB46A); white bloom on the tunnel exit and the detail speculars; a heavily vignetted light card. finish.look stays none so the per-shot accents survive.",
+    "fonts": [
+      "Anton",
+      "Oswald",
+      "Playfair Display",
+      "League Gothic",
+      "Montserrat"
+    ],
+    "palette": [
+      "#000000",
+      "#F4F4F4",
+      "#DCDFDC",
+      "#0A0D0A",
+      "#F7B723",
+      "#254A91",
+      "#1A3B77",
+      "#15319B",
+      "#06142D",
+      "#303430",
+      "#7C3619"
+    ],
+    "energy": "Measured: 27.4 s at 24 fps, 45 cuts (1.68/s; the first detector pass found 37 and missed 5 cuts hidden by flashes or similar frames). Mean and median shot are 0.58 s. The intro (0–7.67 s) runs a 0.96 s mean shot under the spoken quote. After the drop at 7.64 s, shots run 0.25–0.67 s with 1–2 frame glitch and flash inserts, then a 1.2 s breath at 17.8 s, a 1.42 s final hold, a 0.17 s fade and a 0.5 s black tail. The music is 94.8 BPM (bar 2.531 s, 808 on every downbeat from 7.64 s): 71% of cuts land within 2 frames of a beat and 82% on the half-beat; reference analysis reads 94.66 BPM from the cuts. 9 flash events (0.33/s): glitch/RGB inserts at 7.67, 17.75 and 20.17 s; white washes at 9.75 and 15.83 s; a blue wash at 10.17 s; 2 full-white frames at 24.08 s; a pulse at 8.96 s; a grey wash at 25.33 s. The camera is mostly locked off with 2–12% push-ins, one ~2.2x crash zoom with shake at 22.08–22.83 s, and one handheld shake burst at 21.5–21.83 s.",
+    "structure": [
+      {
+        "at": "b0–b12 (0–7.6 s)",
+        "role": "spoken intro",
+        "guidance": "Lone figure in tunnels and hard light, B&W, cuts on beats 2–10 (0.5–1.3 s shots). The quote is set one word group per shot: two small bold caps captions on the chest, an italic serif tail, a giant translucent numeral across a profile, then a gold three-word line just before the drop."
+      },
+      {
+        "at": "b12–b15 (7.6–9.4 s)",
+        "role": "drop",
+        "guidance": "One glitch frame on the 808, then the one-word title glitches in huge, in translucent team blue, across five fast cuts: kit-colour action, detail, blue face, arms raised."
+      },
+      {
+        "at": "b15–b23 (9.4–14.5 s)",
+        "role": "highs and lows",
+        "guidance": "Alternate triumph (muted-colour memories, posterised blue action) with doubt (hands over head, alone, pensive) on every beat; a 0.42 s vignetted black-on-light title card at beat 19.5."
+      },
+      {
+        "at": "b23–b28 (14.5–17.8 s)",
+        "role": "proof",
+        "guidance": "A triptych of panels revealed left to right on beats 22.75, 23 and 23.5, a kneeling low point, a white flash into the gold detail, embraces, and the trophy count as a giant translucent numeral."
+      },
+      {
+        "at": "b28–b36 (17.8–22.8 s)",
+        "role": "legend",
+        "guidance": "A glitch into the lone-practice wide held as a breath, a portrait with a translucent giant word behind, a micro chapter caption, a motion-blurred move, a gold exclamation glitching in over the roaring crowd, blue spray, a frozen 2x2 recap and a crash zoom into the roar."
+      },
+      {
+        "at": "b36–end (22.8–27.4 s)",
+        "role": "finale",
+        "guidance": "Practice wide with a chapter caption, two white frames, flex-roar, embrace, a grey wash into the arms-raised back view with the kit colour kept. The name fades in behind the shoulders with a light, widely tracked one-word tagline; fade to black at 26.75 s."
+      }
+    ],
+    "titles": "Typography is a five-voice system; cards change with the picture. Sizes are true cap heights measured from the reference. (1) Spoken words: Oswald 600 caps, #F4F4F4 with a faint bloom, tracking 0.1, cap 0.041–0.046, centred on the chest; 1, 2 or 4 words per shot, hard on and off. (2) Asides: Playfair Display italic (the real italic), lowercase with punctuation, cap 0.066, just below centre (y 0.575–0.58). (3) Impact lines: Anton gold #F7B723 with glow 6, centred slightly low (y 0.52–0.54): 3 words at cap 0.18, then 1 word plus '!' at 0.194 with a glitch entrance. (4) Monuments: Anton or League Gothic at cap 0.41–0.52, translucent. Use #F2F2F2 at opacity 0.4–0.42 for numbers and the nickname word (the word sits behind the subject), and team blue #254A91 at opacity 0.73 for the title word. The title glitches in and holds 1.58 s across five cuts, and the first numeral fades out across a cut (exit fade). (5) Card and credits: black Anton (cap 0.167) on a #DCDFDC vignetted card; Montserrat micro captions (cap 0.014, tracking 0.25) at y 0.835; the closing name in upright Playfair Display (cap 0.079, y 0.73) behind the shoulders, fading in and out, with a one-word Montserrat 300 tagline (cap 0.019, tracking 0.4) below. Replace the numerals, years, milestones and name with the user's own, keep the word counts per card, and match the blue title word to the user's kit colour.",
+    "music": "Cinematic trap at 94.8 BPM: ~7.6 s of spoken word over a sparse bed (-17 to -24 dB), then a heavy 808 on every bar downbeat (bar 2.531 s) with dotted-eighth hats; loudness jumps ~15 dB at the drop. The skeleton sets grid {bpm 94.8, phase 0.046}. Every time is a beat (fractions keep the reference's 1–3 frame offsets) and the drop is beat 12. For a user track with a quiet or spoken intro and a hard drop, set grid.bpm to its tempo and grid.phase so beat 12 lands on its first big downbeat; the whole edit retimes.",
+    "generation": "Make one hero keyframe of @image1 (still.compose) and judge the likeness first; every other keyframe uses it as the identity image. Generate 13 clips at 24 fps with minimax-h3 (i2v for single-person moments, r2v when teammates, trophies or a venue plate join), each 2–5 s so several in-points can be cut from one clip. Then run 2 birefnet mattes (stare, victory) for the words behind the subject. The split screens are layers over accepted clips, with no extra generation. Light every scene for black and white (one hard source, deep shadows, specular highlights) and keep the kit a saturated colour that skin and background do not share, since keepColor isolates it. Never generate text, numbers or logos; the edit adds them. MiniMax H3's licence excludes use of the open weights (including on Comfy Cloud) in the United States, European Union, United Kingdom and South Korea; there, or when the user wants Apache-2.0 models only, use wan22-14b-i2v for the i2v slots (16 fps, so set interpolate \"blend\" on slow holds) and a still.compose keyframe animated with wan22-14b-i2v in place of each r2v slot."
+  },
+  "slots": [
+    {
+      "id": "walkout",
+      "kind": "clip",
+      "description": "Low-angle tracking shot: the athlete walks out of a dark concrete tunnel toward the lens, hood up, under one hard top light; hands reach in from the frame edges.",
+      "operation": "clip.i2v (minimax-h3-i2v) from a still.compose keyframe of @image1",
+      "guidance": "2 s. Camera backs away at walking pace with a slight roll; steady walk, head lifts a little at the end. Light for black and white: one hard source, deep shadows. No text on clothing."
+    },
+    {
+      "id": "tunnel",
+      "kind": "clip",
+      "description": "From behind: the athlete walks toward a blown-out tunnel exit and becomes a rim-lit silhouette.",
+      "operation": "clip.i2v (minimax-h3-i2v) from a still.compose keyframe of @image1",
+      "guidance": "3 s, camera follows from behind at shoulder height. The exit must clip to white so the body reads as a silhouette; slow, even walk."
+    },
+    {
+      "id": "profile",
+      "kind": "clip",
+      "description": "Extreme close-up profile against soft window light; the face is nearly a silhouette, lips and jawline edge-lit.",
+      "operation": "clip.i2v (minimax-h3-i2v) from a still.compose keyframe of @image1",
+      "guidance": "4.5 s, locked-off, only breathing and one slow blink; later seconds may turn slightly toward the window (used as a pensive insert and a split-screen panel). Keep the profile in the left half so the translucent numeral can sit across it."
+    },
+    {
+      "id": "arrival",
+      "kind": "clip",
+      "description": "High-key wide exterior under an overcast sky: the athlete alone and small in frame in a stark place (empty lot with an old car, dry flats, dead trees), walks in, stops and performs one practice motion of their sport.",
+      "operation": "clip.i2v (minimax-h3-i2v) from a still.compose keyframe of @image1",
+      "guidance": "3.5 s, locked-off wide, horizon low. Bright flat sky so it contrasts with the dark interiors."
+    },
+    {
+      "id": "doubt",
+      "kind": "clip",
+      "description": "Alone with the back to camera: forearm pressed to a cinderblock wall, head bowed, kit number visible; slowly sinks into a crouch with both hands over the head.",
+      "operation": "clip.i2v (minimax-h3-i2v) from a still.compose keyframe of @image1",
+      "guidance": "4 s, slow continuous action; hard side light raking across the wall. First second the wall lean, the middle the hands over the head, the end the crouch."
+    },
+    {
+      "id": "stare",
+      "kind": "clip",
+      "description": "Chest-up portrait against a dark, out-of-focus arena: a cold stare into the lens that breaks, late in the clip, into a slow grin and a laugh.",
+      "operation": "clip.i2v (minimax-h3-i2v) from a still.compose keyframe of @image1",
+      "guidance": "4.5–5 s, locked-off, shallow focus. 0–3 s motionless stare, 3–4 s grin, 4–5 s laugh. Leave head room: the edit crops it to close-ups, uses it as a split-screen panel and puts a word behind the shoulders."
+    },
+    {
+      "id": "stare_matte",
+      "kind": "clip",
+      "description": "Subject matte of the stare clip, for the giant word behind the portrait.",
+      "operation": "matte (birefnet) with start = slot:stare",
+      "guidance": "Mask clip aligned 1:1 with slot:stare."
+    },
+    {
+      "id": "action",
+      "kind": "clip",
+      "description": "The athlete's signature move at full effort under arena lights, low angle (a dunk, a strike, a sprint finish), then a fast dribble or run-up with motion blur.",
+      "operation": "clip.r2v (minimax-h3-r2v) with @image1 and a venue plate; clip.motion pose if the user supplies a reference move",
+      "guidance": "4 s, low angle looking up into the lights, camera tilts up with the move. Keep the kit colour strong and distinct from skin and background: the edit greys everything except that colour (keepColor)."
+    },
+    {
+      "id": "detail",
+      "kind": "clip",
+      "description": "Extreme close-up of the payoff detail: ball dropping through the net, or the equivalent tool of the athlete's sport, hard rim light against black.",
+      "operation": "clip.i2v (minimax-h3-i2v) from a still.generate plate (no people) or a still.compose with @image1's hands",
+      "guidance": "4 s, slow motion feel, big specular highlights. Graded four ways in the edit (grey, blue duotone, posterised blue, gold), so it needs clean blacks."
+    },
+    {
+      "id": "victory",
+      "kind": "clip",
+      "description": "From behind: the athlete raises both arms wide to a roaring crowd in a dark arena, spotlit, kit colour and number visible.",
+      "operation": "clip.i2v (minimax-h3-i2v) from a still.compose keyframe of @image1",
+      "guidance": "4.5 s, locked-off. Arms rise over the first second and hold; crowd stays dark and soft. Leave the lower third clear for the closing name card."
+    },
+    {
+      "id": "victory_matte",
+      "kind": "clip",
+      "description": "Subject matte of the victory clip, so the closing name sits behind the shoulders.",
+      "operation": "matte (birefnet) with start = slot:victory",
+      "guidance": "Mask clip aligned 1:1 with slot:victory."
+    },
+    {
+      "id": "celebrate",
+      "kind": "clip",
+      "description": "Muted-colour celebration memories: the athlete laughing with teammates or family, trophies or medals in hand, spray in the air.",
+      "operation": "clip.r2v (minimax-h3-r2v) with @image1 plus any teammate/trophy images",
+      "guidance": "3.5 s, handheld documentary feel, warm practical lights. Three separate beats (laugh, hug a trophy, group with trophies) so three in-points read as three memories."
+    },
+    {
+      "id": "embrace",
+      "kind": "clip",
+      "description": "Tight close-up of a hard embrace after a game: sweat on skin, an arm locked over a shoulder, eyes closed.",
+      "operation": "clip.r2v (minimax-h3-r2v) with @image1",
+      "guidance": "3.5 s, very tight, slow sway. The edit adds handheld shake on one use."
+    },
+    {
+      "id": "practice",
+      "kind": "clip",
+      "description": "Wide: the athlete practising alone in a dark empty arena under one pool of light, seen from low behind the goal/rim, then a closer pass of the same session.",
+      "operation": "clip.i2v (minimax-h3-i2v) from a still.compose keyframe of @image1",
+      "guidance": "3.5 s, locked-off for the first 1.5 s (it is held as a breath), then a slow drift. Repetitive, patient motion: shoot, retrieve, shoot."
+    },
+    {
+      "id": "roar",
+      "kind": "clip",
+      "description": "Low-angle close-up: the athlete roars to the sky, water spray across the face, then flexes one arm.",
+      "operation": "clip.i2v (minimax-h3-i2v) from a still.compose keyframe of @image1",
+      "guidance": "3.5 s. 0–1 s spray hits the face, 1–2 s mouth opens into a roar (the edit crash-zooms into it), 2.5–3.5 s flex. Hard top light on wet skin."
+    }
+  ],
+  "skeleton": {
+    "canvas": {
+      "width": 1920,
+      "height": 1080,
+      "fps": 24
+    },
+    "grid": {
+      "bpm": 94.8,
+      "phase": 0.046
+    },
+    "audio": {
+      "asset": "ref",
+      "offset": 0
+    },
+    "finish": {
+      "look": "none",
+      "grain": 0.22,
+      "vignette": 0.3,
+      "letterbox": 0.13
+    },
+    "shots": [
+      {
+        "id": "s01",
+        "start": 0,
+        "end": "b2.03",
+        "source": {
+          "asset": "slot:walkout",
+          "in": 0.3
+        },
+        "camera": {
+          "zoom": [
+            1.08,
+            1.0
+          ],
+          "ease": "out",
+          "roll": [
+            -1.5,
+            0
+          ],
+          "handheld": {
+            "amp": 0.003,
+            "freq": 0.8
+          }
+        },
+        "fx": {
+          "look": "bw-contrast",
+          "dipIn": 0.25
+        },
+        "note": "Walk-out from the tunnel; two small chest captions."
+      },
+      {
+        "id": "s02",
+        "start": "b2.03",
+        "end": "b4",
+        "source": {
+          "asset": "slot:tunnel",
+          "in": 0.2
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.06
+          ],
+          "ease": "linear"
+        },
+        "fx": {
+          "look": "bw-contrast",
+          "glow": 0.3
+        },
+        "note": "From behind toward the blown-out exit (white bloom); italic serif tail."
+      },
+      {
+        "id": "s03",
+        "start": "b4",
+        "end": "b6",
+        "source": {
+          "asset": "slot:profile",
+          "in": 0.2
+        },
+        "camera": {
+          "zoom": [
+            1.02,
+            1.03
+          ],
+          "ease": "linear"
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Profile against window light under a translucent giant numeral (bar downbeat)."
+      },
+      {
+        "id": "s04",
+        "start": "b6",
+        "end": "b7.04",
+        "source": {
+          "asset": "slot:arrival",
+          "in": 0.4
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.02
+          ],
+          "ease": "linear"
+        },
+        "fx": {
+          "look": "bw-contrast",
+          "exposure": 0.04
+        },
+        "note": "High-key wide establishing shot; the numeral fades out over it."
+      },
+      {
+        "id": "s05",
+        "start": "b7.04",
+        "end": "b7.96",
+        "source": {
+          "asset": "slot:tunnel",
+          "in": 2.0
+        },
+        "camera": {
+          "zoom": 1.04
+        },
+        "fx": {
+          "look": "bw-contrast",
+          "contrast": 1.2,
+          "exposure": -0.04
+        },
+        "note": "Silhouette against the exit."
+      },
+      {
+        "id": "s06",
+        "start": "b7.96",
+        "end": "b9.54",
+        "source": {
+          "asset": "slot:doubt",
+          "in": 0.2
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.06
+          ],
+          "ease": "in"
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Forearm on the wall, head bowed (bar downbeat)."
+      },
+      {
+        "id": "s07",
+        "start": "b9.54",
+        "end": "b10.3",
+        "source": {
+          "asset": "slot:stare",
+          "in": 3.2
+        },
+        "camera": {
+          "zoom": [
+            1.25,
+            1.3
+          ],
+          "anchor": [
+            0.5,
+            0.4
+          ],
+          "pan": [
+            0.02,
+            0
+          ]
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "The grin; italic serif aside."
+      },
+      {
+        "id": "s08",
+        "start": "b10.3",
+        "end": "b12.04",
+        "source": {
+          "asset": "slot:profile",
+          "in": 2.2
+        },
+        "camera": {
+          "zoom": [
+            1.45,
+            1.62
+          ],
+          "ease": "out",
+          "anchor": [
+            0.45,
+            0.42
+          ]
+        },
+        "fx": {
+          "look": "bw-contrast",
+          "contrast": 1.15
+        },
+        "note": "Extreme side-face push-in under the gold three-word card."
+      },
+      {
+        "id": "s09",
+        "start": "b12.04",
+        "end": "b12.1",
+        "source": {
+          "asset": "slot:action",
+          "in": 0.5
+        },
+        "camera": {
+          "zoom": 1.12
+        },
+        "fx": {
+          "keepColor": {
+            "color": "#15319B",
+            "similarity": 0.3,
+            "blend": 0.1
+          },
+          "contrast": 1.3,
+          "rgbSplit": 16,
+          "exposure": 0.15
+        },
+        "note": "1-frame glitch insert on the drop (beat 12)."
+      },
+      {
+        "id": "s10",
+        "start": "b12.1",
+        "end": "b12.96",
+        "source": {
+          "asset": "slot:action",
+          "in": 0.542
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.06
+          ],
+          "pan": [
+            0,
+            0.03
+          ]
+        },
+        "fx": {
+          "keepColor": {
+            "color": "#15319B",
+            "similarity": 0.3,
+            "blend": 0.1
+          },
+          "contrast": 1.3
+        },
+        "note": "Signature move, low angle, kit colour kept; translucent title word over it."
+      },
+      {
+        "id": "s11",
+        "start": "b12.96",
+        "end": "b14",
+        "source": {
+          "asset": "slot:detail",
+          "in": 0.3
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.12
+          ],
+          "punch": {
+            "at": [
+              "b13.19"
+            ],
+            "amount": 0.06,
+            "decay": 0.18
+          }
+        },
+        "fx": {
+          "look": "bw-contrast",
+          "glow": 0.25
+        },
+        "note": "Payoff detail (net / tool), white bloom on the speculars."
+      },
+      {
+        "id": "s12",
+        "start": "b14",
+        "end": "b14.4",
+        "source": {
+          "asset": "slot:stare",
+          "in": 1.0
+        },
+        "camera": {
+          "zoom": 1.5,
+          "anchor": [
+            0.5,
+            0.42
+          ]
+        },
+        "fx": {
+          "duotone": {
+            "shadow": "#06142D",
+            "highlight": "#A9BFE8"
+          },
+          "contrast": 1.15
+        },
+        "note": "Blue duotone face, pulse flash."
+      },
+      {
+        "id": "s13",
+        "start": "b14.4",
+        "end": "b14.8",
+        "source": {
+          "asset": "slot:victory",
+          "in": 0.3
+        },
+        "camera": {
+          "zoom": 1.0
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Arms raised to the crowd; title word leaves."
+      },
+      {
+        "id": "s14",
+        "start": "b14.8",
+        "end": "b15.3",
+        "source": {
+          "asset": "slot:stare",
+          "in": 0.3
+        },
+        "camera": {
+          "zoom": [
+            1.3,
+            1.34
+          ],
+          "anchor": [
+            0.5,
+            0.4
+          ]
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Cold stare close-up."
+      },
+      {
+        "id": "s15",
+        "start": "b15.3",
+        "end": "b16",
+        "source": {
+          "asset": "slot:celebrate",
+          "in": 0.5
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.08
+          ],
+          "ease": "out"
+        },
+        "fx": {
+          "look": "bleach"
+        },
+        "note": "White wash into a muted-colour celebration."
+      },
+      {
+        "id": "s16",
+        "start": "b16",
+        "end": "b16.06",
+        "source": {
+          "asset": "slot:detail",
+          "in": 1.6
+        },
+        "camera": {
+          "zoom": 1.1
+        },
+        "fx": {
+          "duotone": {
+            "shadow": "#06142D",
+            "highlight": "#A9BFE8"
+          },
+          "contrast": 1.15,
+          "exposure": 0.3
+        },
+        "note": "1-frame blue wash on the bar downbeat."
+      },
+      {
+        "id": "s17",
+        "start": "b16.06",
+        "end": "b17.04",
+        "source": {
+          "asset": "slot:detail",
+          "in": 1.65
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.08
+          ],
+          "roll": [
+            0,
+            3
+          ],
+          "pan": [
+            -0.02,
+            0
+          ]
+        },
+        "fx": {
+          "duotone": {
+            "shadow": "#04102A",
+            "highlight": "#D8E4F6"
+          },
+          "posterize": 3
+        },
+        "note": "Blue posterised detail."
+      },
+      {
+        "id": "s18",
+        "start": "b17.04",
+        "end": "b17.97",
+        "source": {
+          "asset": "slot:arrival",
+          "in": 2.6
+        },
+        "camera": {
+          "zoom": 1.0
+        },
+        "fx": {
+          "look": "bw-contrast",
+          "exposure": 0.06
+        },
+        "note": "Lone practice motion in a stark high-key landscape."
+      },
+      {
+        "id": "s19",
+        "start": "b17.97",
+        "end": "b18.36",
+        "source": {
+          "asset": "slot:profile",
+          "in": 3.6
+        },
+        "camera": {
+          "zoom": 1.0
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Pensive, looking out."
+      },
+      {
+        "id": "s20",
+        "start": "b18.36",
+        "end": "b18.9",
+        "source": {
+          "asset": "slot:doubt",
+          "in": 2.0
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.05
+          ]
+        },
+        "fx": {
+          "duotone": {
+            "shadow": "#06142D",
+            "highlight": "#A9BFE8"
+          },
+          "contrast": 1.15
+        },
+        "note": "Hands over the head, blue duotone."
+      },
+      {
+        "id": "s21",
+        "start": "b18.9",
+        "end": "b19.3",
+        "source": {
+          "asset": "slot:celebrate",
+          "in": 1.8
+        },
+        "camera": {
+          "zoom": 1.04
+        },
+        "fx": {
+          "look": "warm-film",
+          "saturation": 0.55,
+          "contrast": 1.1
+        },
+        "note": "Warm muted memory (trophy at home)."
+      },
+      {
+        "id": "s22",
+        "start": "b19.3",
+        "end": "b19.94",
+        "source": {
+          "asset": "#DCDFDC"
+        },
+        "camera": {
+          "zoom": [
+            1.08,
+            1.0
+          ],
+          "ease": "out"
+        },
+        "fx": {
+          "vignette": 0.8
+        },
+        "note": "Black-on-light title card with a heavy vignette."
+      },
+      {
+        "id": "s23",
+        "start": "b19.94",
+        "end": "b21",
+        "source": {
+          "asset": "slot:action",
+          "in": 1.4
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.12
+          ],
+          "ease": "in",
+          "roll": [
+            0,
+            -2
+          ]
+        },
+        "fx": {
+          "duotone": {
+            "shadow": "#04102A",
+            "highlight": "#D8E4F6"
+          },
+          "posterize": 3
+        },
+        "note": "Blue posterised action (bar downbeat)."
+      },
+      {
+        "id": "s24",
+        "start": "b21",
+        "end": "b22.05",
+        "source": {
+          "asset": "slot:stare",
+          "in": 1.3
+        },
+        "camera": {
+          "zoom": [
+            1.06,
+            1.0
+          ]
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Chest-up portrait, dark ground."
+      },
+      {
+        "id": "s25",
+        "start": "b22.05",
+        "end": "b22.44",
+        "source": {
+          "asset": "slot:action",
+          "in": 2.4
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.1
+          ],
+          "pan": [
+            0,
+            0.03
+          ]
+        },
+        "fx": {
+          "keepColor": {
+            "color": "#15319B",
+            "similarity": 0.3,
+            "blend": 0.1
+          },
+          "contrast": 1.3
+        },
+        "note": "Action in an empty gym, kit colour kept."
+      },
+      {
+        "id": "s26",
+        "start": "b22.44",
+        "end": "b22.84",
+        "source": {
+          "asset": "slot:profile",
+          "in": 1.6
+        },
+        "camera": {
+          "zoom": 1.2
+        },
+        "fx": {
+          "look": "bw-contrast",
+          "exposure": -0.05
+        },
+        "note": "Moody close-up insert."
+      },
+      {
+        "id": "s27",
+        "start": "b22.84",
+        "end": "b24",
+        "source": {
+          "asset": "#303430"
+        },
+        "layers": [
+          {
+            "source": {
+              "asset": "slot:stare",
+              "in": 2.0,
+              "speed": 0.5,
+              "focus": [
+                0.5,
+                0.38
+              ]
+            },
+            "box": [
+              0,
+              0,
+              0.3333,
+              1
+            ],
+            "camera": {
+              "zoom": 1.12,
+              "anchor": [
+                0.5,
+                0.4
+              ]
+            },
+            "fx": {
+              "look": "bw-contrast"
+            }
+          },
+          {
+            "source": {
+              "asset": "slot:profile",
+              "in": 3.9,
+              "speed": 0.5
+            },
+            "box": [
+              0.3333,
+              0,
+              0.3333,
+              1
+            ],
+            "start": "b23.1",
+            "fx": {
+              "look": "bw-contrast"
+            }
+          },
+          {
+            "source": {
+              "asset": "slot:doubt",
+              "in": 3.6,
+              "speed": 0.5
+            },
+            "box": [
+              0.6667,
+              0,
+              0.3334,
+              1
+            ],
+            "start": "b23.5",
+            "fx": {
+              "look": "bw-contrast"
+            }
+          }
+        ],
+        "note": "Triptych: three portrait panels revealed left to right on beats 22.75 / 23 / 23.5."
+      },
+      {
+        "id": "s28",
+        "start": "b24",
+        "end": "b24.94",
+        "source": {
+          "asset": "slot:doubt",
+          "in": 3.0
+        },
+        "camera": {
+          "zoom": 1.02
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Kneeling alone (bar downbeat)."
+      },
+      {
+        "id": "s29",
+        "start": "b24.94",
+        "end": "b26",
+        "source": {
+          "asset": "slot:detail",
+          "in": 3.0
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.06
+          ]
+        },
+        "fx": {
+          "duotone": {
+            "shadow": "#120400",
+            "highlight": "#F7A35C"
+          },
+          "contrast": 1.15,
+          "glow": 0.45,
+          "glowColor": "#FFB46A"
+        },
+        "note": "White wash into the gold duotone detail with an amber bloom."
+      },
+      {
+        "id": "s30",
+        "start": "b26",
+        "end": "b26.4",
+        "source": {
+          "asset": "slot:embrace",
+          "in": 0.4
+        },
+        "camera": {
+          "zoom": 1.05
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Embrace close-up."
+      },
+      {
+        "id": "s31",
+        "start": "b26.4",
+        "end": "b26.9",
+        "source": {
+          "asset": "slot:stare",
+          "in": 4.1
+        },
+        "camera": {
+          "zoom": 1.0
+        },
+        "fx": {
+          "look": "bw-contrast",
+          "exposure": 0.04
+        },
+        "note": "Laughing."
+      },
+      {
+        "id": "s32",
+        "start": "b26.9",
+        "end": "b28",
+        "source": {
+          "asset": "slot:celebrate",
+          "in": 2.8
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.03
+          ]
+        },
+        "fx": {
+          "look": "bleach"
+        },
+        "note": "Group with trophies under a translucent count numeral."
+      },
+      {
+        "id": "s33",
+        "start": "b28",
+        "end": "b28.04",
+        "source": {
+          "asset": "slot:practice"
+        },
+        "camera": {
+          "zoom": 1.08
+        },
+        "fx": {
+          "look": "bw-contrast",
+          "rgbSplit": 18,
+          "exposure": 0.3
+        },
+        "note": "1-frame glitch on the bar downbeat."
+      },
+      {
+        "id": "s34",
+        "start": "b28.04",
+        "end": "b29.95",
+        "source": {
+          "asset": "slot:practice",
+          "in": 0.042
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.02
+          ],
+          "ease": "linear"
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Lone practice wide, held 1.2 s: the breath."
+      },
+      {
+        "id": "s35",
+        "start": "b29.95",
+        "end": "b31",
+        "source": {
+          "asset": "slot:stare",
+          "in": 2.4,
+          "matte": "slot:stare_matte"
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.04
+          ],
+          "roll": [
+            0,
+            -1
+          ]
+        },
+        "fx": {
+          "look": "bw-contrast",
+          "exposure": -0.08
+        },
+        "note": "Portrait with the translucent giant word behind and a micro caption."
+      },
+      {
+        "id": "s36",
+        "start": "b31",
+        "end": "b31.8",
+        "source": {
+          "asset": "slot:action",
+          "in": 3.0
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.15
+          ],
+          "ease": "in",
+          "roll": [
+            0,
+            -2
+          ],
+          "punch": {
+            "at": [
+              "b31.62"
+            ],
+            "amount": 0.06,
+            "decay": 0.15
+          }
+        },
+        "fx": {
+          "keepColor": {
+            "color": "#15319B",
+            "similarity": 0.3,
+            "blend": 0.1
+          },
+          "contrast": 1.3,
+          "motionBlur": {
+            "direction": "horizontal",
+            "amount": 28
+          }
+        },
+        "note": "Motion-blurred move, kit colour kept."
+      },
+      {
+        "id": "s37",
+        "start": "b31.8",
+        "end": "b31.9",
+        "source": {
+          "asset": "slot:victory",
+          "in": 1.0
+        },
+        "camera": {
+          "zoom": 1.06
+        },
+        "fx": {
+          "look": "bw-contrast",
+          "rgbSplit": 14,
+          "exposure": 0.1
+        },
+        "note": "2-frame glitch under the gold exclamation's entrance."
+      },
+      {
+        "id": "s38",
+        "start": "b31.9",
+        "end": "b33",
+        "source": {
+          "asset": "slot:victory",
+          "in": 1.083
+        },
+        "camera": {
+          "zoom": [
+            1.06,
+            1.12
+          ]
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Arms wide to the roaring crowd."
+      },
+      {
+        "id": "s39",
+        "start": "b33",
+        "end": "b33.9",
+        "source": {
+          "asset": "slot:roar",
+          "in": 0.2
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.05
+          ]
+        },
+        "fx": {
+          "duotone": {
+            "shadow": "#06142D",
+            "highlight": "#A9BFE8"
+          },
+          "contrast": 1.15
+        },
+        "note": "Blue duotone spray on the face."
+      },
+      {
+        "id": "s40",
+        "start": "b33.9",
+        "end": "b34.4",
+        "source": {
+          "asset": "slot:embrace",
+          "in": 1.4
+        },
+        "camera": {
+          "zoom": 1.08,
+          "pan": [
+            -0.04,
+            0.03
+          ],
+          "roll": [
+            0,
+            -3
+          ],
+          "shake": {
+            "amp": 0.02,
+            "freq": 10,
+            "decay": false
+          }
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Handheld shake burst."
+      },
+      {
+        "id": "s41",
+        "start": "b34.4",
+        "end": "b34.8",
+        "source": {
+          "asset": "black"
+        },
+        "layers": [
+          {
+            "source": {
+              "asset": "slot:action",
+              "in": 0.8,
+              "speed": 0
+            },
+            "box": [
+              0,
+              0.1296,
+              0.5,
+              0.3704
+            ],
+            "fx": {
+              "keepColor": {
+                "color": "#15319B",
+                "similarity": 0.3,
+                "blend": 0.1
+              },
+              "contrast": 1.3
+            }
+          },
+          {
+            "source": {
+              "asset": "slot:profile",
+              "in": 2.5,
+              "speed": 0
+            },
+            "box": [
+              0.5,
+              0.1296,
+              0.5,
+              0.3704
+            ],
+            "fx": {
+              "look": "bw-contrast"
+            }
+          },
+          {
+            "source": {
+              "asset": "slot:roar",
+              "in": 1.5,
+              "speed": 0
+            },
+            "box": [
+              0,
+              0.5,
+              0.5,
+              0.3704
+            ],
+            "fx": {
+              "look": "bw-contrast"
+            }
+          },
+          {
+            "source": {
+              "asset": "slot:celebrate",
+              "in": 1.9,
+              "speed": 0
+            },
+            "box": [
+              0.5,
+              0.5,
+              0.5,
+              0.3704
+            ],
+            "fx": {
+              "look": "warm-film",
+              "saturation": 0.55,
+              "contrast": 1.1
+            }
+          }
+        ],
+        "note": "2x2 recap grid of earlier moments (frozen panels)."
+      },
+      {
+        "id": "s42",
+        "start": "b34.8",
+        "end": "b36",
+        "source": {
+          "asset": "slot:roar",
+          "in": 1.2
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            2.2
+          ],
+          "ease": "in",
+          "anchor": [
+            0.6,
+            0.55
+          ],
+          "pan": [
+            0.03,
+            -0.02
+          ],
+          "roll": [
+            0,
+            -4
+          ],
+          "shake": {
+            "amp": 0.012,
+            "freq": 11,
+            "decay": false
+          }
+        },
+        "fx": {
+          "look": "bw-contrast",
+          "zoomBlur": 0.3
+        },
+        "note": "Crash zoom into the roar."
+      },
+      {
+        "id": "s43",
+        "start": "b36",
+        "end": "b38",
+        "source": {
+          "asset": "slot:practice",
+          "in": 1.8
+        },
+        "camera": {
+          "zoom": [
+            1.05,
+            1.0
+          ],
+          "ease": "out",
+          "pan": [
+            0.02,
+            0
+          ],
+          "roll": [
+            0.6,
+            0
+          ]
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Practice wide with a chapter caption (bar downbeat)."
+      },
+      {
+        "id": "s44",
+        "start": "b38",
+        "end": "b38.1",
+        "source": {
+          "asset": "white"
+        },
+        "note": "Two full-white frames on beat 38."
+      },
+      {
+        "id": "s45",
+        "start": "b38.1",
+        "end": "b38.9",
+        "source": {
+          "asset": "slot:roar",
+          "in": 2.8
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.1
+          ],
+          "roll": [
+            0,
+            1
+          ]
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Flex and roar."
+      },
+      {
+        "id": "s46",
+        "start": "b38.9",
+        "end": "b39.95",
+        "source": {
+          "asset": "slot:embrace",
+          "in": 2.6
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.1
+          ],
+          "pan": [
+            0.04,
+            0
+          ]
+        },
+        "fx": {
+          "look": "bw-contrast"
+        },
+        "note": "Embrace in the arena."
+      },
+      {
+        "id": "s47",
+        "start": "b39.95",
+        "end": "b42.46",
+        "source": {
+          "asset": "slot:victory",
+          "in": 2.6,
+          "matte": "slot:victory_matte"
+        },
+        "camera": {
+          "zoom": [
+            1.0,
+            1.03
+          ],
+          "ease": "linear"
+        },
+        "fx": {
+          "keepColor": {
+            "color": "#15319B",
+            "similarity": 0.3,
+            "blend": 0.1
+          },
+          "contrast": 1.3,
+          "dipOut": 0.17
+        },
+        "note": "Grey wash into the arms-raised back view, kit colour kept; name behind the shoulders; fade to black (bar downbeat)."
+      },
+      {
+        "id": "s48",
+        "start": "b42.46",
+        "end": "b43.25",
+        "source": {
+          "asset": "black"
+        },
+        "note": "Black tail."
+      }
+    ],
+    "flashes": [
+      {
+        "at": "b12.04",
+        "duration": 0.042,
+        "color": "white",
+        "intensity": 0.35
+      },
+      {
+        "at": "b14.1",
+        "duration": 0.042,
+        "color": "#C8D4F0",
+        "intensity": 0.45
+      },
+      {
+        "at": "b15.3",
+        "duration": 0.083,
+        "color": "white",
+        "intensity": 0.85
+      },
+      {
+        "at": "b16",
+        "duration": 0.042,
+        "color": "#9FB7E8",
+        "intensity": 0.6
+      },
+      {
+        "at": "b24.94",
+        "duration": 0.125,
+        "color": "white",
+        "intensity": 0.95
+      },
+      {
+        "at": "b28",
+        "duration": 0.042,
+        "color": "white",
+        "intensity": 0.4
+      },
+      {
+        "at": "b31.8",
+        "duration": 0.083,
+        "color": "white",
+        "intensity": 0.3
+      },
+      {
+        "at": "b39.95",
+        "duration": 0.083,
+        "color": "#A0A0A0",
+        "intensity": 0.7
+      }
+    ],
+    "text": [
+      {
+        "text": "NO ONE",
+        "start": "b0.7",
+        "end": "b1.4",
+        "font": "Oswald",
+        "size": 0.046,
+        "color": "#F4F4F4",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "anim": "none",
+        "weight": 600,
+        "tracking": 0.1,
+        "uppercase": true,
+        "glow": 1
+      },
+      {
+        "text": "SAW",
+        "start": "b1.4",
+        "end": "b2.03",
+        "font": "Oswald",
+        "size": 0.046,
+        "color": "#F4F4F4",
+        "position": [
+          0.5,
+          0.5
+        ],
+        "anim": "none",
+        "weight": 600,
+        "tracking": 0.1,
+        "uppercase": true,
+        "glow": 1
+      },
+      {
+        "text": "what was coming.",
+        "start": "b2.03",
+        "end": "b4",
+        "font": "Playfair Display",
+        "size": 0.066,
+        "color": "#F4F4F4",
+        "position": [
+          0.5,
+          0.575
+        ],
+        "anim": "none",
+        "italic": true
+      },
+      {
+        "text": "07",
+        "start": "b4",
+        "end": "b6.25",
+        "font": "Anton",
+        "size": 0.52,
+        "color": "#F2F2F2",
+        "position": [
+          0.5,
+          0.52
+        ],
+        "anim": "none",
+        "opacity": 0.42,
+        "exit": "fade"
+      },
+      {
+        "text": "EVERY DAY",
+        "start": "b7.04",
+        "end": "b8.5",
+        "font": "Oswald",
+        "size": 0.041,
+        "color": "#F4F4F4",
+        "position": [
+          0.49,
+          0.5
+        ],
+        "anim": "none",
+        "weight": 600,
+        "tracking": 0.1,
+        "uppercase": true,
+        "glow": 1
+      },
+      {
+        "text": "I CHOSE TO OUTWORK",
+        "start": "b8.5",
+        "end": "b9.54",
+        "font": "Oswald",
+        "size": 0.041,
+        "color": "#F4F4F4",
+        "position": [
+          0.49,
+          0.5
+        ],
+        "anim": "none",
+        "weight": 600,
+        "tracking": 0.1,
+        "uppercase": true,
+        "glow": 1
+      },
+      {
+        "text": "and rise,",
+        "start": "b9.54",
+        "end": "b10.3",
+        "font": "Playfair Display",
+        "size": 0.066,
+        "color": "#F4F4F4",
+        "position": [
+          0.5,
+          0.58
+        ],
+        "anim": "none",
+        "italic": true
+      },
+      {
+        "text": "NO MATTER WHAT.",
+        "start": "b10.3",
+        "end": "b12.04",
+        "font": "Anton",
+        "size": 0.18,
+        "color": "#F7B723",
+        "position": [
+          0.5,
+          0.54
+        ],
+        "anim": "none",
+        "tracking": 0.02,
+        "uppercase": true,
+        "glow": 6
+      },
+      {
+        "text": "RISE",
+        "start": "b12.04",
+        "end": "b14.54",
+        "font": "Anton",
+        "size": 0.454,
+        "color": "#254A91",
+        "position": [
+          0.5,
+          0.52
+        ],
+        "anim": "glitch",
+        "opacity": 0.73,
+        "uppercase": true
+      },
+      {
+        "text": "RELENTLESS.",
+        "start": "b19.3",
+        "end": "b19.94",
+        "font": "Anton",
+        "size": 0.167,
+        "color": "#0A0D0A",
+        "position": [
+          0.5,
+          0.51
+        ],
+        "anim": "none",
+        "uppercase": true
+      },
+      {
+        "text": "3",
+        "start": "b26.9",
+        "end": "b28",
+        "font": "League Gothic",
+        "size": 0.5,
+        "color": "#F2F2F2",
+        "position": [
+          0.49,
+          0.58
+        ],
+        "anim": "none",
+        "opacity": 0.4
+      },
+      {
+        "text": "GRIND",
+        "start": "b29.95",
+        "end": "b31",
+        "font": "Anton",
+        "size": 0.407,
+        "color": "#F2F2F2",
+        "position": [
+          0.6,
+          0.48
+        ],
+        "anim": "none",
+        "opacity": 0.4,
+        "uppercase": true,
+        "behind": true
+      },
+      {
+        "text": "THE COMEBACK · 2019",
+        "start": "b29.95",
+        "end": "b31",
+        "font": "Montserrat",
+        "size": 0.014,
+        "color": "#DDDDDD",
+        "position": [
+          0.5,
+          0.835
+        ],
+        "anim": "none",
+        "tracking": 0.25,
+        "uppercase": true
+      },
+      {
+        "text": "AGAIN!",
+        "start": "b31.8",
+        "end": "b33.1",
+        "font": "Anton",
+        "size": 0.194,
+        "color": "#F7B723",
+        "position": [
+          0.5,
+          0.52
+        ],
+        "anim": "glitch",
+        "uppercase": true,
+        "glow": 6
+      },
+      {
+        "text": "THE LONG ROAD · 2024",
+        "start": "b36.5",
+        "end": "b38",
+        "font": "Montserrat",
+        "size": 0.014,
+        "color": "#DDDDDD",
+        "position": [
+          0.5,
+          0.835
+        ],
+        "anim": "fade",
+        "tracking": 0.25,
+        "uppercase": true
+      },
+      {
+        "text": "Your Name.",
+        "start": "b40.35",
+        "end": "b42.3",
+        "font": "Playfair Display",
+        "size": 0.079,
+        "color": "#F4F4F4",
+        "position": [
+          0.5,
+          0.73
+        ],
+        "anim": "fade",
+        "exit": "fade",
+        "behind": true
+      },
+      {
+        "text": "UNFINISHED",
+        "start": "b41.14",
+        "end": "b42.3",
+        "font": "Montserrat",
+        "size": 0.019,
+        "color": "#E8E8E8",
+        "position": [
+          0.5,
+          0.835
+        ],
+        "anim": "fade",
+        "weight": 300,
+        "tracking": 0.4,
+        "uppercase": true,
+        "exit": "fade"
+      }
+    ],
+    "sfx": [
+      {
+        "at": "b12.04",
+        "sound": "glitch",
+        "gainDb": -14
+      },
+      {
+        "at": "b22.84",
+        "sound": "tick",
+        "gainDb": -16
+      },
+      {
+        "at": "b23.1",
+        "sound": "tick",
+        "gainDb": -16
+      },
+      {
+        "at": "b23.5",
+        "sound": "tick",
+        "gainDb": -16
+      },
+      {
+        "at": "b28",
+        "sound": "glitch",
+        "gainDb": -14
+      },
+      {
+        "at": "b31.8",
+        "sound": "glitch",
+        "gainDb": -14
+      },
+      {
+        "at": "b34.8",
+        "sound": "whoosh",
+        "gainDb": -12
+      }
+    ]
+  },
+  "prompt": "@image1 is the athlete at the centre of a black-and-white documentary about their mindset. It moves from doubt to dominance: walking out of a dark tunnel, alone with their head against a wall, practising in an empty arena, then the signature move under the lights, a roar, embraces, and arms raised to the crowd. Keep the face, build and kit from @image1 in every shot; the kit colour is the one accent allowed in grey frames, with gold reserved for the impact words. Other images (@image2 onward) may add teammates, a venue, trophies or a jersey number. The words form one short first-person statement about outworking everyone, split one word group per shot; swap in the user's number, milestones, years and name, and keep the cards short.",
+  "author": "open-katana"
+}

@@ -1,0 +1,73 @@
+{
+  "name": "open-katana",
+  "version": "0.1.0",
+  "description": "Open-source reference-edit remixing for AI agents: analyze a reference edit, plan a remix with your own subjects, generate shots on local or self-hosted ComfyUI, and assemble the final cut with ffmpeg.",
+  "license": "MIT",
+  "author": "open-katana contributors",
+  "homepage": "https://github.com/shrimbly/open-katana#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shrimbly/open-katana.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shrimbly/open-katana/issues"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "claude-code",
+    "claude-plugin",
+    "comfyui",
+    "ffmpeg",
+    "video-editing",
+    "ai-video",
+    "remix",
+    "aura-edit"
+  ],
+  "type": "module",
+  "bin": {
+    "open-katana": "dist/cli.js"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "files": [
+    "dist",
+    "!dist/dev",
+    "!dist/**/*.map",
+    "bin",
+    "assets",
+    "skills",
+    "presets",
+    ".claude-plugin"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node ui/build.mjs && vite build --config studio/vite.config.ts",
+    "build:ui": "node ui/build.mjs",
+    "dev": "tsx src/cli.ts mcp",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "widgets:dev": "node ui/build.mjs && node ui/dev/build.mjs && echo \"serve dist/ (e.g. python3 -m http.server -d dist) and open /dev/host.html?w=presets|estimate|result\"",
+    "studio:dev": "vite --config studio/vite.config.ts",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "2.2.0",
+    "@modelcontextprotocol/core": "2.2.0",
+    "@modelcontextprotocol/ext-apps": "2.0.3",
+    "@modelcontextprotocol/server": "2.2.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "@types/node": "^22.20.5",
+    "preact": "10.29.8",
+    "tsx": "4.23.14",
+    "typescript": "6.0.3",
+    "vite": "8.2.4",
+    "vite-plugin-singlefile": "2.3.3",
+    "vitest": "5.0.3"
+  },
+  "packageManager": "pnpm@11.13.1"
+}

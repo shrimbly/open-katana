@@ -1,0 +1,20 @@
+node_modules/
+dist/
+coverage/
+.DS_Store
+*.log
+*.tgz
+# private notes (research drafts)
+/notes/
+# local projects, caches and analysis output
+.open-katana/
+/projects/
+katana-analysis/
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+.claude/settings.local.json

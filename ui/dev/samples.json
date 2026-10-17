@@ -1,0 +1,333 @@
+{
+ "presets": {
+  "presets": [
+   {
+    "slug": "cold-stare",
+    "title": "Cold Stare",
+    "description": "Minimal sigma stare edit: extreme close-ups on the eyes, freeze frames and zoom ladders on the beat, monochrome with one red accent and massive condensed type.",
+    "category": "style_transfer",
+    "format": {
+     "aspect": "9:16",
+     "durationSec": 10,
+     "fps": 30
+    },
+    "inputs": {
+     "images": {
+      "min": 1,
+      "max": 3,
+      "title": "Your character (sharp, front-facing face)"
+     },
+     "music": "optional",
+     "instructionsMaxChars": 2000
+    },
+    "recipe": {
+     "look": "bw-contrast with a red accent on titles only, heavy grain, deep vignette",
+     "fonts": [
+      "Anton",
+      "Bebas Neue"
+     ],
+     "palette": [
+      "#000000",
+      "#FFFFFF",
+      "#E10600"
+     ],
+     "energy": "Few cuts (≤1 per second) but a zoom ladder (stepped punch-ins) on every beat, freeze frames on accents, one hard flash at the climax.",
+     "structure": [
+      {
+       "at": "0–30%",
+       "role": "stare",
+       "guidance": "Static extreme close-up; nothing moves but a slow blink."
+      },
+      {
+       "at": "30–80%",
+       "role": "ladder",
+       "guidance": "Stepped zoom punches toward the eyes on each beat; words stack beside the face."
+      },
+      {
+       "at": "80–100%",
+       "role": "payoff",
+       "guidance": "Flash, freeze on the eyes, title word in red."
+      }
+     ],
+     "titles": "Huge Anton words filling the frame width, slam animation, one word per beat.",
+     "music": "Slow, heavy beat with long reverb; space between hits matters.",
+     "generation": "One or two keyframes are enough: an extreme close-up and a medium shot; animate with very subtle I2V motion (blink, breath)."
+    },
+    "prompt": "@image1 stares through the lens without emotion; keep every facial detail identical to the photo.",
+    "author": "open-katana",
+    "source": "built-in",
+    "hasReference": false
+   },
+   {
+    "slug": "neon-rain",
+    "title": "Neon Rain",
+    "description": "Moody night aura edit: slow-motion hero moments in a rain-wet city, teal-and-black grade, glow, white flashes on the drops and slammed blackletter titles.",
+    "category": "personalized_edits",
+    "format": {
+     "aspect": "9:16",
+     "durationSec": 15,
+     "fps": 30
+    },
+    "inputs": {
+     "images": {
+      "min": 1,
+      "max": 5,
+      "title": "Your character (first image: clear face)"
+     },
+     "music": "optional",
+     "instructionsMaxChars": 2000
+    },
+    "recipe": {
+     "look": "teal-night grade, crushed blacks, light film grain, soft glow on highlights, subtle vignette",
+     "fonts": [
+      "UnifrakturMaguntia",
+      "Anton"
+     ],
+     "palette": [
+      "#0B1F1E",
+      "#2DE1C2",
+      "#FFFFFF"
+     ],
+     "energy": "Slow first act (1–2 cuts per second), then cuts on every beat after the drop with zoom punches and short shake bursts on hits; 3–5 white flashes per 10 s, always on hits.",
+     "structure": [
+      {
+       "at": "0–15%",
+       "role": "introduction",
+       "guidance": "Slow push-in on the hero in shadow; eyes lift to the lens. No text yet."
+      },
+      {
+       "at": "15–40%",
+       "role": "identity",
+       "guidance": "Details: hands, jacket, silhouette against city lights, a walk toward camera in slow motion."
+      },
+      {
+       "at": "40–45%",
+       "role": "drop",
+       "guidance": "White flash on the drop, slam the title word in blackletter with glow."
+      },
+      {
+       "at": "45–85%",
+       "role": "escalation",
+       "guidance": "Beat-cut montage of stares, turns and wind in hair; punch-ins on every second beat; one freeze frame."
+      },
+      {
+       "at": "85–100%",
+       "role": "payoff",
+       "guidance": "Final slow stare into the lens, flash out to black on the last hit."
+      }
+     ],
+     "titles": "One or two words max per card, uppercase, centred; blackletter for the title word, Anton for captions.",
+     "music": "Dark phonk or slowed trap with a clear drop; use the reference's track when one is supplied.",
+     "generation": "Keyframes: compose the hero into each night location plate (rain-wet street, underpass, rooftop). Clips: 2–3 s Wan I2V slow-motion moments; motion transfer with pose control only for performances the reference needs."
+    },
+    "prompt": "Make @image1 the hero of a dark aura edit. Keep their face, hair and clothing exactly; nights are wet, neon reflections are teal, and every move is slow and deliberate.",
+    "author": "open-katana",
+    "source": "built-in",
+    "hasReference": false
+   },
+   {
+    "slug": "golden-hour",
+    "title": "Golden Hour",
+    "description": "Soft golden-hour hero edit: dreamy warm grade, soft white flashes, gentle handheld drift, film grain and elegant serif captions.",
+    "category": "personalized_edits",
+    "format": {
+     "aspect": "9:16",
+     "durationSec": 14,
+     "fps": 30
+    },
+    "inputs": {
+     "images": {
+      "min": 1,
+      "max": 5,
+      "title": "Your character (face and full outfit)"
+     },
+     "music": "optional",
+     "instructionsMaxChars": 2000
+    },
+    "recipe": {
+     "look": "warm-film to dreamy grade, lifted blacks, halation glow, medium grain",
+     "fonts": [
+      "Playfair Display",
+      "Cormorant Garamond"
+     ],
+     "palette": [
+      "#F6C177",
+      "#FFF4E0",
+      "#3A2418"
+     ],
+     "energy": "Calm: ~1 cut per second, soft 0.15 s white flashes on phrase changes, handheld drift on every shot, no hard shake.",
+     "structure": [
+      {
+       "at": "0–25%",
+       "role": "introduction",
+       "guidance": "Back-lit walk at golden hour, hair catching the sun."
+      },
+      {
+       "at": "25–70%",
+       "role": "moments",
+       "guidance": "Laughs, glances over the shoulder, spinning slowly, close-ups of outfit details."
+      },
+      {
+       "at": "70–100%",
+       "role": "payoff",
+       "guidance": "Slow turn to camera with a smile; caption fades in."
+      }
+     ],
+     "titles": "Lower-case italic serif captions, fade or rise animation, generous letter spacing.",
+     "music": "Indie or lo-fi with a gentle beat; cut on phrase starts rather than every beat.",
+     "generation": "Locations: sunlit field, rooftop, seaside promenade. Slow 3 s I2V clips with gentle camera moves."
+    },
+    "prompt": "@image1 has the whole golden hour to themselves; keep their face and outfit exactly.",
+    "author": "open-katana",
+    "source": "built-in",
+    "hasReference": false
+   },
+   {
+    "slug": "phonk-velocity",
+    "title": "Phonk Velocity",
+    "description": "High-energy velocity edit: speed ramps that snap into slow motion on the beat, strobing black-and-white inserts, heavy shake on the bass and chromatic splits.",
+    "category": "personalized_edits",
+    "format": {
+     "aspect": "9:16",
+     "durationSec": 12,
+     "fps": 30
+    },
+    "inputs": {
+     "images": {
+      "min": 1,
+      "max": 5,
+      "title": "Your character or vehicle"
+     },
+     "music": "optional",
+     "instructionsMaxChars": 2000
+    },
+    "recipe": {
+     "look": "high contrast, desaturated with alternating black-and-white and inverted 2–4 frame inserts, RGB split on hits",
+     "fonts": [
+      "Archivo Black",
+      "JetBrains Mono"
+     ],
+     "palette": [
+      "#000000",
+      "#FFFFFF",
+      "#FF1E1E"
+     ],
+     "energy": "2–4 cuts per second; every clip ramps from fast (2×) to slow (0.3×) landing on a beat; shake bursts on every kick; strobe during the build.",
+     "structure": [
+      {
+       "at": "0–20%",
+       "role": "hook",
+       "guidance": "Hard cut in on a fast move, ramp into slow motion on beat 2."
+      },
+      {
+       "at": "20–60%",
+       "role": "build",
+       "guidance": "Alternating colour and black-and-white inserts, strobe, accelerating cut rate."
+      },
+      {
+       "at": "60–65%",
+       "role": "drop",
+       "guidance": "Freeze frame + red accent word slam."
+      },
+      {
+       "at": "65–100%",
+       "role": "payoff",
+       "guidance": "Velocity ramps on every bar; last shot holds on the hero, hard cut to black."
+      }
+     ],
+     "titles": "Single red accent word in Archivo Black at the drop; small monospaced captions in corners.",
+     "music": "Drift phonk with a heavy cowbell line; cut on kicks and cowbell hits.",
+     "generation": "Generate 3–4 s clips with strong single actions (turn, walk, jacket flick) so ramps have motion to slow down; I2V at 16 fps then blend-interpolate in the edit."
+    },
+    "prompt": "@image1 is the hero. Every shot is a decisive motion that can be ramped: turning, stepping forward, pulling a jacket on.",
+    "author": "open-katana",
+    "source": "built-in",
+    "hasReference": false
+   }
+  ]
+ },
+ "result": {
+  "project": "20261017-neon-rain-ab12",
+  "title": "Neon Rain",
+  "version": 2,
+  "uri": "katana://media/x/deliver/neon-rain_v2.mp4",
+  "path": "~/.open-katana/projects/20261017-neon-rain-ab12/deliver/neon-rain_v2.mp4",
+  "sizeMB": 4.2,
+  "durationSec": 4,
+  "versions": [
+   {
+    "version": 1,
+    "uri": "katana://media/x/deliver/neon-rain_v1.mp4"
+   },
+   {
+    "version": 2,
+    "uri": "katana://media/x/deliver/neon-rain_v2.mp4",
+    "note": "new title font"
+   }
+  ]
+ },
+ "estimate": {
+  "project": "20261017-neon-rain-ab12",
+  "totalMinutes": 9.4,
+  "budgetMinutes": 60,
+  "backend": "comfy-cli (cloud)",
+  "jobs": [
+   {
+    "line": "key1",
+    "operation": "still.compose",
+    "profile": "qwen21-edit",
+    "takes": 1,
+    "video": "",
+    "size": "1344×1008",
+    "minutes": 0.2,
+    "license": {
+     "name": "Qwen Research License",
+     "commercial": "no"
+    }
+   },
+   {
+    "line": "plate-street",
+    "operation": "still.generate",
+    "profile": "z-image-turbo",
+    "takes": 1,
+    "video": "",
+    "size": "1344×1008",
+    "minutes": 0.1,
+    "license": {
+     "name": "Apache-2.0",
+     "commercial": "yes"
+    }
+   },
+   {
+    "line": "v1",
+    "operation": "clip.i2v",
+    "profile": "minimax-h3-i2v",
+    "takes": 1,
+    "video": "3 s",
+    "size": "832×624",
+    "minutes": 1.4,
+    "license": {
+     "name": "MiniMax H3 Community License",
+     "commercial": "restricted"
+    }
+   },
+   {
+    "line": "m1",
+    "operation": "clip.motion",
+    "profile": "wan22-14b-fun-control",
+    "takes": 1,
+    "video": "2 s",
+    "size": "832×624",
+    "minutes": 5.4,
+    "license": {
+     "name": "Apache-2.0",
+     "commercial": "yes"
+    }
+   }
+  ],
+  "licenseWarnings": [
+   "qwen21-edit (key1): Qwen Research License, non-commercial use only.",
+   "minimax-h3-i2v (v1): MiniMax H3 Community License, use of the open weights (Comfy Cloud included) is excluded in the US, EU, UK and South Korea."
+  ]
+ }
+}

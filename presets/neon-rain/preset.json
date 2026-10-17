@@ -1,0 +1,26 @@
+{
+  "slug": "neon-rain",
+  "title": "Neon Rain",
+  "description": "Moody night aura edit: slow-motion hero moments in a rain-wet city, teal-and-black grade, glow, white flashes on the drops and slammed blackletter titles.",
+  "category": "personalized_edits",
+  "format": { "aspect": "9:16", "durationSec": 15, "fps": 30 },
+  "inputs": { "images": { "min": 1, "max": 5, "title": "Your character (first image: clear face)" }, "music": "optional", "instructionsMaxChars": 2000 },
+  "recipe": {
+    "look": "teal-night grade, crushed blacks, light film grain, soft glow on highlights, subtle vignette",
+    "fonts": ["UnifrakturMaguntia", "Anton"],
+    "palette": ["#0B1F1E", "#2DE1C2", "#FFFFFF"],
+    "energy": "Slow first act (1–2 cuts per second), then cuts on every beat after the drop with zoom punches and short shake bursts on hits; 3–5 white flashes per 10 s, always on hits.",
+    "structure": [
+      { "at": "0–15%", "role": "introduction", "guidance": "Slow push-in on the hero in shadow; eyes lift to the lens. No text yet." },
+      { "at": "15–40%", "role": "identity", "guidance": "Details: hands, jacket, silhouette against city lights, a walk toward camera in slow motion." },
+      { "at": "40–45%", "role": "drop", "guidance": "White flash on the drop, slam the title word in blackletter with glow." },
+      { "at": "45–85%", "role": "escalation", "guidance": "Beat-cut montage of stares, turns and wind in hair; punch-ins on every second beat; one freeze frame." },
+      { "at": "85–100%", "role": "payoff", "guidance": "Final slow stare into the lens, flash out to black on the last hit." }
+    ],
+    "titles": "One or two words max per card, uppercase, centred; blackletter for the title word, Anton for captions.",
+    "music": "Dark phonk or slowed trap with a clear drop; use the reference's track when one is supplied.",
+    "generation": "Keyframes: compose the hero into each night location plate (rain-wet street, underpass, rooftop). Clips: 2–3 s Wan I2V slow-motion moments; motion transfer with pose control only for performances the reference needs."
+  },
+  "prompt": "Make @image1 the hero of a dark aura edit. Keep their face, hair and clothing exactly; nights are wet, neon reflections are teal, and every move is slow and deliberate.",
+  "author": "open-katana"
+}

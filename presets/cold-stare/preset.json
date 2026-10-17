@@ -1,0 +1,24 @@
+{
+  "slug": "cold-stare",
+  "title": "Cold Stare",
+  "description": "Minimal sigma stare edit: extreme close-ups on the eyes, freeze frames and zoom ladders on the beat, monochrome with one red accent and massive condensed type.",
+  "category": "style_transfer",
+  "format": { "aspect": "9:16", "durationSec": 10, "fps": 30 },
+  "inputs": { "images": { "min": 1, "max": 3, "title": "Your character (sharp, front-facing face)" }, "music": "optional", "instructionsMaxChars": 2000 },
+  "recipe": {
+    "look": "bw-contrast with a red accent on titles only, heavy grain, deep vignette",
+    "fonts": ["Anton", "Bebas Neue"],
+    "palette": ["#000000", "#FFFFFF", "#E10600"],
+    "energy": "Few cuts (≤1 per second) but a zoom ladder (stepped punch-ins) on every beat, freeze frames on accents, one hard flash at the climax.",
+    "structure": [
+      { "at": "0–30%", "role": "stare", "guidance": "Static extreme close-up; nothing moves but a slow blink." },
+      { "at": "30–80%", "role": "ladder", "guidance": "Stepped zoom punches toward the eyes on each beat; words stack beside the face." },
+      { "at": "80–100%", "role": "payoff", "guidance": "Flash, freeze on the eyes, title word in red." }
+    ],
+    "titles": "Huge Anton words filling the frame width, slam animation, one word per beat.",
+    "music": "Slow, heavy beat with long reverb; space between hits matters.",
+    "generation": "One or two keyframes are enough: an extreme close-up and a medium shot; animate with very subtle I2V motion (blink, breath)."
+  },
+  "prompt": "@image1 stares through the lens without emotion; keep every facial detail identical to the photo.",
+  "author": "open-katana"
+}

@@ -1,0 +1,25 @@
+{
+  "slug": "phonk-velocity",
+  "title": "Phonk Velocity",
+  "description": "High-energy velocity edit: speed ramps that snap into slow motion on the beat, strobing black-and-white inserts, heavy shake on the bass and chromatic splits.",
+  "category": "personalized_edits",
+  "format": { "aspect": "9:16", "durationSec": 12, "fps": 30 },
+  "inputs": { "images": { "min": 1, "max": 5, "title": "Your character or vehicle" }, "music": "optional", "instructionsMaxChars": 2000 },
+  "recipe": {
+    "look": "high contrast, desaturated with alternating black-and-white and inverted 2–4 frame inserts, RGB split on hits",
+    "fonts": ["Archivo Black", "JetBrains Mono"],
+    "palette": ["#000000", "#FFFFFF", "#FF1E1E"],
+    "energy": "2–4 cuts per second; every clip ramps from fast (2×) to slow (0.3×) landing on a beat; shake bursts on every kick; strobe during the build.",
+    "structure": [
+      { "at": "0–20%", "role": "hook", "guidance": "Hard cut in on a fast move, ramp into slow motion on beat 2." },
+      { "at": "20–60%", "role": "build", "guidance": "Alternating colour and black-and-white inserts, strobe, accelerating cut rate." },
+      { "at": "60–65%", "role": "drop", "guidance": "Freeze frame + red accent word slam." },
+      { "at": "65–100%", "role": "payoff", "guidance": "Velocity ramps on every bar; last shot holds on the hero, hard cut to black." }
+    ],
+    "titles": "Single red accent word in Archivo Black at the drop; small monospaced captions in corners.",
+    "music": "Drift phonk with a heavy cowbell line; cut on kicks and cowbell hits.",
+    "generation": "Generate 3–4 s clips with strong single actions (turn, walk, jacket flick) so ramps have motion to slow down; I2V at 16 fps then blend-interpolate in the edit."
+  },
+  "prompt": "@image1 is the hero. Every shot is a decisive motion that can be ramped: turning, stepping forward, pulling a jacket on.",
+  "author": "open-katana"
+}

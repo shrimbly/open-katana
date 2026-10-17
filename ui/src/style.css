@@ -1,0 +1,70 @@
+:root {
+  --ok-accent: oklch(0.63 0.22 25);
+  --ok-accent-ink: #fff;
+  --ok-radius: 14px;
+  --ok-gap: 12px;
+  --ok-warn: oklch(0.78 0.15 75);
+  --ok-font: var(--font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
+  color-scheme: dark;
+}
+:root[data-theme="dark"] {
+  --ok-bg: var(--color-background-primary, #121212);
+  --ok-panel: var(--color-background-secondary, #1c1c1c);
+  --ok-line: var(--color-border-primary, #2c2c2c);
+  --ok-fg: var(--color-text-primary, #f2f2f2);
+  --ok-muted: var(--color-text-secondary, #9a9a9a);
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ok-bg: var(--color-background-primary, #ffffff);
+  --ok-panel: var(--color-background-secondary, #f4f4f2);
+  --ok-line: var(--color-border-primary, #e2e2df);
+  --ok-fg: var(--color-text-primary, #151515);
+  --ok-muted: var(--color-text-secondary, #6b6b6b);
+  --ok-warn: oklch(0.55 0.15 60);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ok-bg); color: var(--ok-fg); font: 14px/1.45 var(--ok-font); }
+.wrap { padding: 14px; display: grid; gap: var(--ok-gap); }
+.head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.brand { font-weight: 800; letter-spacing: 0.04em; font-size: 12px; color: var(--ok-accent); }
+h1 { font-size: 16px; margin: 0; font-weight: 650; }
+.meta { color: var(--ok-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.panel { background: var(--ok-panel); border: 1px solid var(--ok-line); border-radius: var(--ok-radius); overflow: hidden; }
+button, .btn {
+  font: inherit; font-weight: 600; border-radius: 999px; padding: 8px 16px; cursor: pointer;
+  border: 1px solid var(--ok-line); background: transparent; color: var(--ok-fg);
+  transition: transform 120ms ease, background-color 120ms ease, opacity 120ms ease;
+}
+button:hover { background: color-mix(in oklch, var(--ok-fg) 8%, transparent); }
+button:active { transform: scale(0.97); }
+button.primary { background: var(--ok-accent); color: var(--ok-accent-ink); border-color: transparent; }
+button.primary:hover { background: color-mix(in oklch, var(--ok-accent) 88%, white); }
+button:disabled { opacity: 0.5; cursor: default; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.chip { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--ok-line); color: var(--ok-muted); }
+.chip.on { border-color: var(--ok-accent); color: var(--ok-fg); }
+video { display: block; width: 100%; max-height: 560px; background: #000; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--ok-line); font-size: 13px; }
+th { color: var(--ok-muted); font-weight: 600; font-size: 12px; }
+tr:last-child td { border-bottom: 0; }
+.total { font-size: 20px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.muted { color: var(--ok-muted); }
+.badge { margin-left: 6px; font-size: 10px; font-weight: 650; padding: 1px 6px; border-radius: 999px; white-space: nowrap; color: var(--ok-warn); border: 1px solid color-mix(in oklch, var(--ok-warn) 45%, transparent); }
+.warn { padding: 10px 12px; display: grid; gap: 4px; font-size: 12px; border-color: color-mix(in oklch, var(--ok-warn) 45%, var(--ok-line)); }
+.warn strong { color: var(--ok-warn); font-size: 12px; }
+.footnote { color: var(--ok-muted); font-size: 11px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.card { padding: 14px; display: grid; gap: 6px; align-content: start; min-height: 150px; cursor: pointer; text-align: left; border-radius: var(--ok-radius); }
+.card:hover { border-color: color-mix(in oklch, var(--ok-accent) 60%, var(--ok-line)); }
+.card .title { font-weight: 750; font-size: 15px; }
+.card .desc { color: var(--ok-muted); font-size: 12px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.card.cta { background: linear-gradient(160deg, color-mix(in oklch, var(--ok-accent) 30%, var(--ok-panel)), var(--ok-panel)); }
+.card.cta .title { text-transform: uppercase; letter-spacing: 0.04em; }
+label { display: grid; gap: 6px; font-weight: 600; font-size: 13px; }
+textarea, input[type="text"] { font: inherit; color: var(--ok-fg); background: var(--ok-bg); border: 1px solid var(--ok-line); border-radius: 10px; padding: 10px; }
+textarea { min-height: 84px; resize: vertical; }
+input[type="file"] { color: var(--ok-muted); }
+.error { color: oklch(0.7 0.19 25); font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

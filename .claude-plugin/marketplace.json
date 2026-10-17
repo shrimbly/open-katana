@@ -1,0 +1,14 @@
+{
+  "name": "open-katana",
+  "owner": {
+    "name": "open-katana contributors"
+  },
+  "plugins": [
+    {
+      "name": "open-katana",
+      "source": "./",
+      "description": "Reference-edit remixing on open models via ComfyUI. Adds the /katana skill and the open-katana MCP server."
+    }
+  ],
+  "description": "open-katana: an open, ComfyUI-based alternative to reference-edit remixing tools, focused on aura-farming edits."
+}
