@@ -1,0 +1,81 @@
+[
+ {
+  "init": true
+ },
+ {
+  "say": "Reading the guide and checking the project."
+ },
+ {
+  "tool": "katana_guide",
+  "input": {
+   "topic": "workflow"
+  }
+ },
+ {
+  "ok": {
+   "topic": "workflow"
+  },
+  "text": "The katana workflow."
+ },
+ {
+  "tool": "katana_status",
+  "input": {
+   "project": "$PROJECT"
+  }
+ },
+ {
+  "ok": {
+   "project": "$PROJECT",
+   "stage": "intake"
+  }
+ },
+ {
+  "rateLimit": {
+   "status": "rejected",
+   "resetsAt": 1792204200,
+   "rateLimitType": "five_hour",
+   "overageStatus": "rejected",
+   "unifiedWindows": {
+    "five_hour": {
+     "utilization": 1,
+     "resetsAt": 1792204200
+    },
+    "seven_day": {
+     "utilization": 0.6,
+     "resetsAt": 1792692000
+    }
+   }
+  }
+ },
+ {
+  "emit": {
+   "type": "assistant",
+   "message": {
+    "role": "assistant",
+    "id": "msg_limit",
+    "model": "<synthetic>",
+    "content": [
+     {
+      "type": "text",
+      "text": "You've hit your limit \u00b7 resets 5:30pm"
+     }
+    ]
+   },
+   "session_id": "$SESSION",
+   "error": "rate_limit"
+  }
+ },
+ {
+  "result": {
+   "subtype": "success",
+   "is_error": true,
+   "api_error_status": 429,
+   "api_error": "usage_limit_reached",
+   "total_cost_usd": 0.2,
+   "result": "You've hit your limit \u00b7 resets 5:30pm"
+  }
+ },
+ {
+  "exit": 1
+ }
+]

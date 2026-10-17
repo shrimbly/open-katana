@@ -215,11 +215,19 @@ function pickOnsets(env: Float32Array, step: number): Onset[] {
   return out;
 }
 
-/** Tempo by onset autocorrelation with a log-normal prior around 120 BPM. */
+/**
+ * Tempo by onset autocorrelation with a log-normal prior around 120 BPM. Confidence is the lower of two
+ * reads: how much the best lag stands out from the other lags, and how strongly the envelope repeats at
+ * that lag (its normalised autocorrelation above the noise floor). Noise has no beat but can still have
+ * one lag that stands out by chance; music with a beat repeats at r ≈ 0.5–0.9, noise at r < 0.12.
+ */
 export function estimateTempo(env: Float32Array, step: number): { bpm: number; confidence: number; periodSamples: number } {
   const minLag = Math.round(60 / 200 / step);
   const maxLag = Math.min(env.length - 1, Math.round(60 / 60 / step));
   const m = mean(env);
+  let variance = 0;
+  for (let i = 0; i < env.length; i++) variance += (env[i]! - m) ** 2;
+  variance /= env.length || 1;
   let bestLag = 0;
   let best = -Infinity;
   let total = 0;
@@ -235,9 +243,40 @@ export function estimateTempo(env: Float32Array, step: number): { bpm: number; c
       bestLag = lag;
     }
   }
-  if (bestLag === 0 || best <= 0) return { bpm: 0, confidence: 0, periodSamples: 0 };
-  return { bpm: round(60 / (bestLag * step), 1), confidence: round(Math.min(1, (best / total) * 8)), periodSamples: bestLag };
+  if (bestLag === 0 || best <= 0 || !variance) return { bpm: 0, confidence: 0, periodSamples: 0 };
+  let ac = 0;
+  for (let i = bestLag; i < env.length; i++) ac += (env[i]! - m) * (env[i - bestLag]! - m);
+  const r = ac / (env.length - bestLag) / variance;
+  const floor = Math.max(0.12, 4 / Math.sqrt(env.length));
+  const repeats = Math.min(1, Math.max(0, (r - floor) / 0.2));
+  return { bpm: round(60 / (bestLag * step), 1), confidence: round(Math.min(1, (best / total) * 8, repeats)), periodSamples: bestLag };
 }
+
+/** The onset envelope's normalised autocorrelation at a tempo's period (the best of the lags around it). */
+export function tempoSupport(env: Float32Array, step: number, bpm: number): number {
+  if (!(bpm > 0)) return 0;
+  const m = mean(env);
+  let variance = 0;
+  for (let i = 0; i < env.length; i++) variance += (env[i]! - m) ** 2;
+  variance /= env.length || 1;
+  if (!variance) return 0;
+  const centre = Math.round(60 / bpm / step);
+  let best = -Infinity;
+  for (let lag = Math.max(1, centre - 1); lag <= centre + 1 && lag < env.length; lag++) {
+    let ac = 0;
+    for (let i = lag; i < env.length; i++) ac += (env[i]! - m) * (env[i - lag]! - m);
+    best = Math.max(best, ac / (env.length - lag) / variance);
+  }
+  return Number.isFinite(best) ? best : 0;
+}
+
+/**
+ * When the edit's cuts may replace the audio's tempo. The grid search tries thousands of tempos and
+ * phases, so a handful of cuts always fits some grid by chance (8 cuts gave z ≈ 2.9 on a 91 BPM grid over
+ * 120 BPM music; random cut times reach z ≈ 4.9, cuts on the beat 6.5–7): it takes enough cuts, most of
+ * them on the grid, a fit well past chance, and music that repeats at the new tempo too.
+ */
+const CUT_GRID = { minCuts: 12, minHits: 8, minHitRate: 0.7, minZ: 5, minSupport: 0.5 };
 
 /** Dynamic-programming beat tracker (Ellis 2007). */
 export function trackBeats(env: Float32Array, period: number, step: number, tightness = 100): number[] {
@@ -290,8 +329,16 @@ export function analyzeSamples(samples: Float32Array, rate = AUDIO_RATE, hints?:
     const tol = 1.5 / hints.fps;
     cutsOnBeat = cutsOnGrid(hints.cuts, beats, tol);
     const grid = gridFromCuts(hints.cuts, tempo.bpm, hints.fps);
-    // Switch only when the cuts clearly prefer another grid.
-    if (grid && Math.abs(grid.bpm - tempo.bpm) / tempo.bpm > 0.04 && grid.hitRate > cutsOnBeat + 0.15) {
+    const usable = hints.cuts.filter((c) => c > 0.05).length;
+    // Switch only when the cuts clearly prefer another grid and the music itself has that pulse.
+    const clear =
+      grid &&
+      usable >= CUT_GRID.minCuts &&
+      grid.hitRate * usable >= CUT_GRID.minHits &&
+      grid.hitRate >= CUT_GRID.minHitRate &&
+      grid.z >= CUT_GRID.minZ &&
+      tempoSupport(env, step, grid.bpm) >= CUT_GRID.minSupport * Math.max(tempoSupport(env, step, tempo.bpm), 0);
+    if (grid && clear && Math.abs(grid.bpm - tempo.bpm) / tempo.bpm > 0.04 && grid.hitRate > cutsOnBeat + 0.15) {
       const period = 60 / grid.bpm / step;
       const tracked = trackBeats(env, Math.round(period), step, 400);
       const rigid: number[] = [];

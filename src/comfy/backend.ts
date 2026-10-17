@@ -59,9 +59,17 @@ export interface Backend {
   /** Node class names and loader choices from /object_info. Undefined when the backend cannot list them. */
   catalog(): Promise<{ nodes: Set<string>; models: ModelChoices } | undefined>;
   upload(path: string): Promise<string>;
-  submit(prompt: ApiPrompt): Promise<string>;
+  /**
+   * Queues a prompt and returns the id the backend gave it. `promptId` asks for that id (a canonical UUID);
+   * backends that pick their own ignore it, so always use the returned one.
+   */
+  submit(prompt: ApiPrompt, opts?: { promptId?: string }): Promise<string>;
   poll(promptId: string): Promise<JobPoll>;
   download(file: OutputFile, dest: string): Promise<void>;
+  /**
+   * Stops a queued or running job. Resolves once the backend confirmed it (or the job is unknown or already
+   * over); rejects when the cancel could not be confirmed, so the caller keeps the job open and says so.
+   */
   cancel(promptId: string): Promise<void>;
 }
 
@@ -153,11 +161,12 @@ export class HttpBackend implements Backend {
     return multipartUpload(`${this.target}/upload/image`, path, this.headers);
   }
 
-  async submit(prompt: ApiPrompt): Promise<string> {
+  async submit(prompt: ApiPrompt, opts: { promptId?: string } = {}): Promise<string> {
+    // ComfyUI takes a client-chosen prompt_id (a UUID), so a job recorded before the submit can be cancelled by it.
     const body = await this.json<{ prompt_id: string; node_errors?: Record<string, unknown> }>("/prompt", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, client_id: this.clientId }),
+      body: JSON.stringify({ prompt, client_id: this.clientId, ...(opts.promptId ? { prompt_id: opts.promptId } : {}) }),
     });
     return body.prompt_id;
   }
@@ -186,9 +195,18 @@ export class HttpBackend implements Backend {
     await writeFile(dest, Buffer.from(await res.arrayBuffer()));
   }
 
+  /**
+   * Removes the prompt from the queue, and interrupts it only when it is the one running: a bare /interrupt
+   * stops whatever ComfyUI is executing, which may be another project's job.
+   */
   async cancel(promptId: string): Promise<void> {
-    await this.json("/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ delete: [promptId] }) }).catch(() => undefined);
-    await fetch(`${this.target}/interrupt`, { method: "POST", headers: this.headers }).catch(() => undefined);
+    const queue = await this.json<{ queue_running?: unknown[][]; queue_pending?: unknown[][] }>("/queue");
+    const running = (queue.queue_running ?? []).some((q) => q[1] === promptId);
+    await this.json("/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ delete: [promptId] }) });
+    if (running) {
+      const res = await fetch(`${this.target}/interrupt`, { method: "POST", headers: { ...this.headers, "Content-Type": "application/json" }, body: JSON.stringify({ prompt_id: promptId }) });
+      if (!res.ok) throw new Error(`POST /interrupt → ${res.status}`);
+    }
   }
 }
 
@@ -276,7 +294,10 @@ export class CloudBackend implements Backend {
   }
 
   async cancel(promptId: string): Promise<void> {
-    await this.json(`/jobs/${promptId}/cancel`, { method: "POST" }).catch(() => undefined);
+    const res = await fetch(`${this.target}/api/jobs/${encodeURIComponent(promptId)}/cancel`, { method: "POST", headers: this.headers });
+    // Unknown or already over: nothing left to stop.
+    if (res.ok || res.status === 404 || res.status === 409) return;
+    throw new Error(`POST /api/jobs/${promptId}/cancel → ${res.status}: ${(await res.text()).slice(0, 200)}`);
   }
 }
 
@@ -494,7 +515,13 @@ export class ComfyCliBackend implements Backend {
   }
 
   async cancel(promptId: string): Promise<void> {
-    await this.cli(["jobs", "cancel", promptId]).catch(() => undefined);
+    try {
+      await this.cli(["jobs", "cancel", promptId]);
+    } catch (e) {
+      // Unknown or already over: nothing left to stop.
+      if (/not[ _]found|already|finished|completed|cancell?ed/i.test(`${(e as Error & { code?: string }).code ?? ""} ${(e as Error).message}`)) return;
+      throw e;
+    }
   }
 }
 

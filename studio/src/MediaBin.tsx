@@ -70,7 +70,7 @@ function AssetCard({ asset, projectId, used }: { asset: AssetT; projectId: strin
       ) : (
         <img class="thumb" src={api.thumb(projectId, asset.id, asset.kind === "video" ? Math.min(0.5, (asset.durationSec ?? 1) / 2) : 0, 160)} alt="" loading="lazy" draggable={false} />
       )}
-      {(verdict || used) && <span class={`badge ${verdict ?? ""}`}>{verdict === "rejected" ? "Rejected" : verdict === "accepted" ? (used ? "In edit" : "Accepted") : "In edit"}</span>}
+      {(verdict || used) && <span class={`badge ${verdict ?? ""}`}>{verdict === "reject" ? "Rejected" : verdict === "accept" ? (used ? "In edit" : "Accepted") : "In edit"}</span>}
       <span class="meta">
         <span class="name">{asset.id}</span>
         {asset.kind === "video" && <span class="dur mono">{(asset.durationSec ?? 0).toFixed(1)}s</span>}

@@ -41,12 +41,27 @@ export async function saveConfig(cfg: Config): Promise<void> {
   await chmod(configPath(), 0o600);
 }
 
+
+function originOf(url: string | undefined): string | undefined {
+  try {
+    return url ? new URL(url).origin : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
- * The backend after `katana_backend set`. The old url and apiKey carry over only when the kind is
- * unchanged, so a Comfy Cloud key never follows a switch to another host (or the other way round).
+ * The backend after `katana_backend set` or the app's Setup. The old url and apiKey carry over only when the
+ * kind is unchanged, so a Comfy Cloud key never follows a switch to another host (or the other way round). An
+ * http token and proxy headers belong to their ComfyUI: a URL on another origin doesn't get them unless a new
+ * token comes with it (Comfy Cloud keeps its key across its own URLs, such as a staging host).
  */
 export function nextBackend(prev: Config["backend"], patch: { kind: BackendKind; url?: string; apiKey?: string }): NonNullable<Config["backend"]> {
-  const base = prev?.kind === patch.kind ? prev : {};
+  let base: Partial<NonNullable<Config["backend"]>> = prev?.kind === patch.kind ? prev : {};
+  if (patch.kind === "http" && patch.url && base.kind === "http" && originOf(patch.url) !== originOf(base.url ?? "http://127.0.0.1:8188")) {
+    const { apiKey: _key, headers: _headers, ...rest } = base;
+    base = rest;
+  }
   return { ...base, kind: patch.kind, ...(patch.url ? { url: patch.url } : {}), ...(patch.apiKey ? { apiKey: patch.apiKey } : {}) };
 }
 

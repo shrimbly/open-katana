@@ -1,0 +1,70 @@
+/*
+ * Shared tokens for the open-katana editor and app. Dark only: video colour is judged against a
+ * neutral surround. Sodium = you (actions, selection, your picks). Steel = the director.
+ */
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/Archivo_wdth,wght_.ttf") format("truetype");
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono_wght_.ttf") format("truetype");
+  font-weight: 100 800;
+  font-display: swap;
+}
+:root {
+  /* surfaces */
+  --night: #0b0c0d;
+  --ground: #131416;
+  --panel: #1a1c1f;
+  --raised: #23262a;
+  --seam: #2d3035;
+  --seam-strong: #3a3e44;
+  /* text */
+  --bone: #ece7dc;
+  --ash: #9a9ea6;
+  --dim: #646971; /* decorative or disabled only, never body text */
+  /* you */
+  --sodium: #f2a33a;
+  --sodium-hot: #ffc46b;
+  --sodium-soft: rgba(242, 163, 58, 0.16);
+  --sodium-ink: #1d1407;
+  --halo: rgba(242, 163, 58, 0.35);
+  /* the director */
+  --steel: #7aa6cc;
+  --steel-soft: rgba(122, 166, 204, 0.14);
+  /* the edit */
+  --flash: #fff6e6;
+  --scrim: linear-gradient(to top, rgb(11 12 13 / 0.92), rgb(11 12 13 / 0) 55%);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* status */
+  --ok: #8fbf7a;
+  --danger: #e8604f;
+  --chip: #e2dccf;
+  --chip-ink: #17181b;
+  /* type */
+  --ui: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  /* metrics */
+  --header-h: 52px;
+  --head-w: 104px;
+  --btn-h: 30px;
+  --cta-h: 44px;
+  --radius-btn: 6px;
+  --radius-input: 5px;
+  --radius-card: 8px;
+  --gutter: 24px;
+  --margin: 40px;
+  /* motion */
+  --ease-slam: cubic-bezier(0.2, 0.9, 0.1, 1);
+  --ease-sheet: cubic-bezier(0.3, 0.7, 0.2, 1);
+  color-scheme: dark;
+}
+@media (max-width: 1279px) { :root { --gutter: 20px; --margin: 24px; } }
+@media (max-width: 759px) { :root { --gutter: 16px; --margin: 16px; } }
+@media (prefers-contrast: more) {
+  :root { --ash: #bec2c8; --seam: #4a4f56; --seam-strong: #5a5f66; --grain: none; }
+}

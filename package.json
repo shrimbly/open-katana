@@ -50,6 +50,8 @@
     "test:watch": "vitest",
     "widgets:dev": "node ui/build.mjs && node ui/dev/build.mjs && echo \"serve dist/ (e.g. python3 -m http.server -d dist) and open /dev/host.html?w=presets|estimate|result\"",
     "studio:dev": "vite --config studio/vite.config.ts",
+    "app:dev": "tsx src/cli.ts app --no-open",
+    "test:smoke": "node tests/smoke/app.smoke.mjs",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {

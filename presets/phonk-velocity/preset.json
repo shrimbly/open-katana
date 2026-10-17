@@ -5,6 +5,46 @@
   "category": "personalized_edits",
   "format": { "aspect": "9:16", "durationSec": 12, "fps": 30 },
   "inputs": { "images": { "min": 1, "max": 5, "title": "Your character or vehicle" }, "music": "optional", "instructionsMaxChars": 2000 },
+  "display": { "font": "Archivo Black", "weight": 400, "italic": false, "case": "upper", "color": "#FF1E1E" },
+  "soundtrack": {
+    "file": "soundtrack.m4a",
+    "title": "Phonk Velocity theme",
+    "artist": "open-katana",
+    "licence": "MIT (original, generated with ACE-Step 1.5 XL)",
+    "bpm": 160.1,
+    "dropSec": 3
+  },
+  "example": {
+    "video": "example.mp4",
+    "poster": "poster.jpg",
+    "credit": "Example made with open-katana: a fictional person (generated with Z-Image Turbo) on an original ACE-Step 1.5 XL track.",
+    "models": ["qwen21-edit", "wan22-14b-flf", "wan22-14b-i2v"]
+  },
+  "cutmap": "cutmap.json",
+  "brief": [
+    {
+      "id": "star",
+      "label": "Star of the edit",
+      "kind": "choice",
+      "options": ["Me", "My car", "My bike"],
+      "default": "Me",
+      "optionPrompts": {
+        "Me": "Hero: the person in the photos.",
+        "My car": "Hero: the person's car from the photos; the person appears beside it.",
+        "My bike": "Hero: the person on their bike from the photos."
+      },
+      "suggestions": []
+    },
+    {
+      "id": "word",
+      "label": "The red word at the drop",
+      "kind": "text",
+      "verbatim": true,
+      "default": "VELOCITY",
+      "maxChars": 10,
+      "suggestions": ["NO BRAKES", "FULL SEND", "GONE"]
+    }
+  ],
   "recipe": {
     "look": "high contrast, desaturated with alternating black-and-white and inverted 2–4 frame inserts, RGB split on hits",
     "fonts": ["Archivo Black", "JetBrains Mono"],

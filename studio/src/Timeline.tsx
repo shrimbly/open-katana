@@ -83,7 +83,7 @@ function shotTags(s: ShotT): string {
 }
 
 export function Timeline({ editor, clock, snap, setSnap, pps, setPps, showShortcuts }: Props) {
-  const { edl, state, selection, setSelection, apply } = editor;
+  const { edl, state, selection, setSelection, apply, locked } = editor;
   const scrollRef = useRef<HTMLDivElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<Drag | null>(null);
@@ -125,7 +125,7 @@ export function Timeline({ editor, clock, snap, setSnap, pps, setPps, showShortc
     c.style.width = `${w}px`;
     const g = c.getContext("2d")!;
     g.scale(c.width / w, dpr);
-    g.fillStyle = "rgba(154,158,166,0.55)";
+    g.fillStyle = getComputedStyle(c).getPropertyValue("--wave").trim() || "rgba(154,158,166,0.55)";
     const off = edl.audio.offset;
     for (let x = 0; x < w; x++) {
       const i0 = Math.floor((off + x / pps) * wave.perSec);
@@ -382,6 +382,7 @@ export function Timeline({ editor, clock, snap, setSnap, pps, setPps, showShortc
           <button
             class="btn small"
             type="button"
+            disabled={locked}
             title="Split the shot under the playhead (S)"
             onClick={() => {
               const i = edl.shots.findIndex((_, k) => shots[k]!.a < clock.time && clock.time < shots[k]!.b);
@@ -393,6 +394,7 @@ export function Timeline({ editor, clock, snap, setSnap, pps, setPps, showShortc
           <button
             class="btn small"
             type="button"
+            disabled={locked}
             title="Add text at the playhead (T)"
             onClick={() => {
               let idx = 0;
@@ -405,6 +407,7 @@ export function Timeline({ editor, clock, snap, setSnap, pps, setPps, showShortc
           <button
             class="btn small"
             type="button"
+            disabled={locked}
             title="Add a flash at the playhead (F)"
             onClick={() => {
               let idx = 0;
@@ -417,6 +420,7 @@ export function Timeline({ editor, clock, snap, setSnap, pps, setPps, showShortc
           <button
             class="btn small"
             type="button"
+            disabled={locked}
             title="Add a sound effect at the playhead"
             onClick={() => {
               let idx = 0;

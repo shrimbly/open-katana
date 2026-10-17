@@ -218,6 +218,42 @@ licence and lists licence warnings before you approve the estimate.
 
 ## Using it
 
+### The app
+
+The app makes edits without a chat: pick a template and drop a photo of you, or drop an edit you
+love and put yourself in it. Start it from the clone, after [Install](#install):
+
+```
+pnpm install && pnpm build  # once, and again after every pull
+node dist/cli.js app        # opens http://127.0.0.1:4310 (--port N, --no-open, --replace)
+```
+
+Browsing templates and decoding work straight away. To make edits the app needs three things, and
+its **Setup** page (the status pill at the top right) checks each one and says what to do:
+[Claude Code](https://docs.claude.com/en/docs/claude-code/setup) installed and signed in (run
+`claude` once in a terminal), a ComfyUI to generate on (Comfy Cloud, this computer's or another
+computer's), and ffmpeg. Running `node dist/cli.js app` again opens the app that is already running;
+if an older open-katana holds the port, the app tells you to restart it with `--replace`, or starts
+on a free port and prints the address.
+
+1. **Templates.** Click one, drop a photo and your track (until templates ship their own), and
+   change the words if you like: every field starts with the template's own. The receipt shows
+   the time, GPU minutes and Claude usage as ranges, the caps, and each model's licence. **Make my
+   edit** approves those caps.
+2. **Any edit.** Drop a video (2–60 s) anywhere on the home page. It decodes in a few seconds and
+   draws its Cut Map: every cut, flash and beat. Click **Put me in this edit**, drop a photo, and
+   **Make my edit**.
+
+The director is your own Claude Code, run headless with only the open-katana tools; the shots are
+made on your ComfyUI. Edits keep going if you close the app, Stop also cancels the GPU jobs, and
+spending never passes the caps you approved. Each result can be downloaded, opened in the studio,
+given new words without the GPU, changed by the director, or (for decoded edits) saved as a
+template. It needs ffmpeg, a ComfyUI and Claude Code signed in; usage counts toward your Claude
+plan or is billed to your API key, as your Claude Code is set up.
+See [docs/app.md](docs/app.md) for setup, billing, privacy, data locations and troubleshooting.
+
+### In a chat
+
 ```
 /katana
 /katana neon-rain            (a built-in preset; attach or paste the path of your photo)
@@ -233,8 +269,9 @@ Built-in presets come in two kinds:
 - **Style recipes** (structure, energy, look, type) that the agent builds a new edit from:
   `cold-stare`, `golden-hour`, `neon-rain`, `phonk-velocity`.
 
-Save your own with a reference edit (3–30 s) via `katana_preset_save`; presets live in
-`~/.open-katana/presets`.
+Save your own with a reference edit (3–30 s) via `katana_preset_save`, or with **Save as template**
+on an edit made in the app; presets live in `~/.open-katana/presets`. How templates are built
+(brief fields, title style, timing, soundtracks and examples): [docs/templates.md](docs/templates.md).
 
 ### The studio
 
@@ -262,6 +299,8 @@ the EDL, renders and delivered versions. Any session can resume a project with `
 
 ## Documentation
 
+- [The app](docs/app.md)
+- [Authoring templates](docs/templates.md)
 - [Architecture](docs/architecture.md)
 - [EDL reference](docs/edl.md)
 - [Choosing the image models](docs/models.md)
@@ -277,6 +316,10 @@ pnpm build       # dist/, single-file widgets in dist/ui and the studio in dist/
 pnpm dev         # MCP server on stdio from source (tsx src/cli.ts mcp)
 pnpm widgets:dev # build the widgets plus a local MCP Apps host to preview them with sample data
 pnpm studio:dev  # studio front end with hot reload (proxying a running studio)
+pnpm app:dev     # the app from source on port 4310, for pnpm studio:dev to proxy
+pnpm test:smoke  # browser smoke test of the app with a fake director (needs Chrome; not in pnpm test;
+                 # builds the client into a temp folder served via OPEN_KATANA_UI_DIR, so dist/ is untouched)
+node scripts/build-examples.mjs --check   # size budgets of the templates' bundled media
 ```
 
 ## Responsible use

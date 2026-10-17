@@ -17,6 +17,148 @@
     "music": "optional",
     "instructionsMaxChars": 2000
   },
+  "display": { "font": "Anton", "weight": 400, "italic": false, "case": "upper", "color": "#F7B723" },
+  "timing": { "dropBeat": 12 },
+  "soundtrack": {
+    "file": "soundtrack.m4a",
+    "title": "Iron Mindset theme",
+    "artist": "open-katana",
+    "licence": "MIT (original, generated with ACE-Step 1.5 XL)",
+    "bpm": 94.8,
+    "dropSec": 7.02
+  },
+  "example": {
+    "video": "example.mp4",
+    "poster": "poster.jpg",
+    "credit": "Example made with open-katana: a fictional person (generated with Z-Image Turbo) on an original ACE-Step 1.5 XL track.",
+    "models": ["birefnet", "qwen21-edit", "wan22-14b-i2v", "wan22-5b-ti2v", "z-image-turbo"]
+  },
+  "cutmap": "cutmap.json",
+  "brief": [
+    {
+      "id": "name",
+      "label": "Your name, for the closing card",
+      "kind": "text",
+      "required": true,
+      "binds": [{ "index": 15, "format": "{value}." }],
+      "placeholder": "Your Name",
+      "maxChars": 20
+    },
+    {
+      "id": "sport",
+      "label": "Your sport",
+      "kind": "choice",
+      "options": ["Football", "Basketball", "Boxing", "Track", "Tennis", "MMA"],
+      "allowOther": true,
+      "default": "Football",
+      "prompt": "Sport: {value}. The action, detail and practice shots show this sport.",
+      "suggestions": []
+    },
+    {
+      "id": "number",
+      "label": "Shirt number",
+      "help": "Two digits read best.",
+      "kind": "text",
+      "binds": [{ "index": 3 }],
+      "default": "07",
+      "maxChars": 2,
+      "suggestions": ["10", "23", "99"]
+    },
+    {
+      "id": "kit",
+      "label": "Kit colour",
+      "help": "The one colour that stays in the black-and-white shots.",
+      "kind": "color",
+      "default": "#15319B",
+      "recolor": [{ "from": "#15319B" }, { "from": "#254A91", "lightness": 0.45 }],
+      "prompt": "Kit colour: {value}.",
+      "suggestions": []
+    },
+    {
+      "id": "stat",
+      "label": "One big number",
+      "help": "Titles, rings, seasons: the giant numeral at 0:17.",
+      "kind": "text",
+      "binds": [{ "index": 10 }],
+      "default": "3",
+      "maxChars": 3,
+      "collapsed": true,
+      "suggestions": ["1", "5", "12"]
+    },
+    {
+      "id": "word",
+      "label": "Your word",
+      "kind": "text",
+      "binds": [{ "index": 11 }],
+      "default": "GRIND",
+      "maxChars": 9,
+      "collapsed": true,
+      "suggestions": ["HUNGRY", "BEAST"]
+    },
+    {
+      "id": "milestone1",
+      "label": "First milestone",
+      "kind": "text",
+      "binds": [{ "index": 12 }],
+      "default": "THE COMEBACK · 2019",
+      "maxChars": 24,
+      "collapsed": true,
+      "suggestions": ["FIRST CAP · 2021", "THE INJURY · 2022"]
+    },
+    {
+      "id": "milestone2",
+      "label": "Second milestone",
+      "kind": "text",
+      "binds": [{ "index": 14 }],
+      "default": "THE LONG ROAD · 2024",
+      "maxChars": 24,
+      "collapsed": true,
+      "suggestions": ["THE FINAL · 2025", "CAPTAIN · 2026"]
+    },
+    {
+      "id": "tagline",
+      "label": "One word under your name",
+      "kind": "text",
+      "binds": [{ "index": 16 }],
+      "default": "UNFINISHED",
+      "maxChars": 12,
+      "collapsed": true,
+      "suggestions": ["RELENTLESS", "HUNGRY", "NEXT"]
+    },
+    {
+      "id": "statement",
+      "label": "The spoken words",
+      "help": "Keep the word count per card: they're timed to the voice.",
+      "kind": "words",
+      "binds": [
+        { "index": 0 },
+        { "index": 1 },
+        { "index": 2 },
+        { "index": 4 },
+        { "index": 5 },
+        { "index": 6 },
+        { "index": 7 },
+        { "index": 8 },
+        { "index": 9 },
+        { "index": 13 }
+      ],
+      "default": [
+        "NO ONE",
+        "SAW",
+        "what was coming.",
+        "EVERY DAY",
+        "I CHOSE TO OUTWORK",
+        "and rise,",
+        "NO MATTER WHAT.",
+        "RISE",
+        "RELENTLESS.",
+        "AGAIN!"
+      ],
+      "maxChars": 20,
+      "collapsed": true,
+      "suggestions": []
+    }
+  ],
   "recipe": {
     "look": "Monochrome-first sports documentary in a 2.40:1 letterbox (140 px bars at 1080p), light grain, soft vignette. bw-contrast for the struggle beats (deep blacks, bright speculars); bleach for muted-colour celebration memories; keepColor on the kit colour (#15319B in the skeleton; set it to the user's kit) so action shots go grey around the jersey; blue duotone (shadow #06142D, highlight #A9BFE8) for glory faces, plus posterize 3 for the two-tone action and detail beats; one gold duotone insert (#120400 → #F7A35C) with an amber glow (glowColor #FFB46A); white bloom on the tunnel exit and the detail speculars; a heavily vignetted light card. finish.look stays none so the per-shot accents survive.",
     "fonts": [

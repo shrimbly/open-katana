@@ -1,6 +1,7 @@
 import { Fragment } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { api } from "./api.js";
+import { Link } from "./app/router.js";
 import { Clock } from "./clock.js";
 import { addFlash, addText, type Ctx, cutTimes, shotAt, splitShot } from "./edits.js";
 import { loadTextFaces } from "./fonts.js";
@@ -35,7 +36,7 @@ const SHORTCUTS: [string, string][] = [
 
 export function App({ projectId }: { projectId: string }) {
   const editor = useEditor(projectId);
-  const { edl, state, selection, setSelection, apply, undo, redo, saving, warnings, error, render, requestRender, history } = editor;
+  const { edl, state, selection, setSelection, apply, undo, redo, saving, warnings, error, render, requestRender, history, locked, fromApp } = editor;
   const clock = useMemo(() => new Clock(), []);
   // Exposed for automation and debugging from the browser console.
   (window as unknown as { studio: unknown }).studio = { clock, editor };
@@ -72,11 +73,11 @@ export function App({ projectId }: { projectId: string }) {
 
   // The picture-only render powers live text; build it once if the project has none.
   useEffect(() => {
-    if (state && edl && !state.renders.notext && !askedPicture.current) {
+    if (state && edl && !state.renders.notext && !askedPicture.current && !locked) {
       askedPicture.current = true;
       void requestRender("notext");
     }
-  }, [state, edl, requestRender]);
+  }, [state, edl, requestRender, locked]);
 
   // Changes to the edit mark renders as stale.
   const firstEdl = useRef(true);
@@ -204,27 +205,40 @@ export function App({ projectId }: { projectId: string }) {
     window.addEventListener("pointerup", () => window.removeEventListener("pointermove", move), { once: true });
   };
 
-  const saveLabel = saving === "error" ? `Not saved: ${error ?? "error"}` : saving === "saved" ? (error ? error : "All changes saved") : "Saving…";
+  const saveLabel = locked
+    ? "Read-only while it's being made"
+    : saving === "error"
+      ? `Not saved: ${error ?? "error"}`
+      : saving === "saved"
+        ? error
+          ? error
+          : "All changes saved"
+        : "Saving…";
   const busy = render.running && render.mode !== "notext";
 
   return (
-    <div class="app" style={{ "--timeline-h": `${tlHeight}px` }}>
+    <div class={`app${locked ? " locked" : ""}`} style={{ "--timeline-h": `${tlHeight}px` }}>
       <header class="topbar">
         <div class="brand">
-          <a href="./">open-katana</a>
+          <Link href="/">open-katana</Link>
+          {fromApp && (
+            <Link class="back" href="/edits">
+              ← Your edits
+            </Link>
+          )}
           <span class="title">{state?.project.title ?? "Loading…"}</span>
         </div>
         <span class={`save-state${saving === "error" ? " error" : ""}`} role="status">
           {saveLabel}
         </span>
         <span class="spacer" />
-        <button class="btn ghost icon-btn" type="button" onClick={undo} disabled={!history.undo} title="Undo (⌘Z)" aria-label="Undo">
+        <button class="btn ghost icon-btn" type="button" onClick={undo} disabled={locked || !history.undo} title="Undo (⌘Z)" aria-label="Undo">
           <svg viewBox="0 0 16 16" aria-hidden="true">
             <path d="M5.5 3.5 2.5 6.5l3 3" />
             <path d="M2.5 6.5h7a4 4 0 0 1 0 8H7" />
           </svg>
         </button>
-        <button class="btn ghost icon-btn" type="button" onClick={redo} disabled={!history.redo} title="Redo (⇧⌘Z)" aria-label="Redo">
+        <button class="btn ghost icon-btn" type="button" onClick={redo} disabled={locked || !history.redo} title="Redo (⇧⌘Z)" aria-label="Redo">
           <svg viewBox="0 0 16 16" aria-hidden="true">
             <path d="m10.5 3.5 3 3-3 3" />
             <path d="M13.5 6.5h-7a4 4 0 0 0 0 8H9" />
@@ -247,13 +261,13 @@ export function App({ projectId }: { projectId: string }) {
             )}
           </span>
         )}
-        <button class="btn" type="button" disabled={!edl || busy} onClick={() => requestRender("preview")} title="Half resolution, text included">
+        <button class="btn" type="button" disabled={!edl || busy || locked} onClick={() => requestRender("preview")} title="Half resolution, text included">
           {busy && render.mode === "preview" ? `Rendering ${render.done}/${render.total || "…"}` : "Render preview"}
         </button>
         <button
           class="btn primary"
           type="button"
-          disabled={!edl || busy}
+          disabled={!edl || busy || locked}
           onClick={() => {
             exporting.current = true;
             void requestRender("master");
@@ -263,11 +277,20 @@ export function App({ projectId }: { projectId: string }) {
           {busy && render.mode === "master" ? `Rendering ${render.done}/${render.total || "…"}` : "Export"}
         </button>
       </header>
+      {locked && (
+        <div class="lock-banner" role="status">
+          <span>This edit is still being made. Editing opens when it's done.</span>
+          <Link href={`/p/${encodeURIComponent(projectId)}`}>See progress →</Link>
+        </div>
+      )}
 
       <div class="workspace">
         <MediaBin editor={editor} />
         <Viewer editor={editor} clock={clock} mode={mode} setMode={setMode} lastEditAt={lastEditAt} />
-        <Inspector editor={editor} clock={clock} />
+        {/* Read-only while a run holds the project: every control in the inspector is disabled. */}
+        <fieldset class="inspector-lock" disabled={locked}>
+          <Inspector editor={editor} clock={clock} />
+        </fieldset>
       </div>
       <div class="splitter" onPointerDown={startSplitter} role="separator" aria-orientation="horizontal" aria-label="Resize timeline" />
       <Timeline editor={editor} clock={clock} snap={snap} setSnap={setSnap} pps={pps} setPps={setPps} showShortcuts={() => setShowKeys((v) => !v)} />

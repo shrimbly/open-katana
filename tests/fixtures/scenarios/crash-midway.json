@@ -1,0 +1,212 @@
+[
+ {
+  "init": true
+ },
+ {
+  "say": "Reading the guide and checking the project."
+ },
+ {
+  "tool": "katana_guide",
+  "input": {
+   "topic": "workflow"
+  }
+ },
+ {
+  "ok": {
+   "topic": "workflow"
+  },
+  "text": "The katana workflow."
+ },
+ {
+  "tool": "katana_status",
+  "input": {
+   "project": "$PROJECT"
+  }
+ },
+ {
+  "ok": {
+   "project": "$PROJECT",
+   "stage": "intake"
+  }
+ },
+ {
+  "say": "Planning one line per slot plus the face crop."
+ },
+ {
+  "tool": "katana_plan",
+  "input": {
+   "project": "$PROJECT",
+   "plan": {
+    "concept": "An ordinary rooftop that turns into a throne room.",
+    "shots": [
+     {
+      "at": "0-2",
+      "role": "hero",
+      "description": "temple stare",
+      "route": "i2v",
+      "lines": [
+       "temple-key",
+       "temple"
+      ]
+     }
+    ],
+    "jobs": [
+     {
+      "line": "face",
+      "operation": "still.face",
+      "prompt": "face crop of s1",
+      "images": [
+       "s1"
+      ]
+     },
+     {
+      "line": "temple-key",
+      "operation": "still.compose",
+      "prompt": "the person from image 1, chest-up, finger at the temple",
+      "images": [
+       "s1"
+      ],
+      "takes": 3
+     },
+     {
+      "line": "temple",
+      "operation": "clip.i2v",
+      "prompt": "slow push-in",
+      "start": "@temple-key",
+      "durationSec": 2
+     }
+    ]
+   }
+  }
+ },
+ {
+  "write": "plan/plan.json",
+  "json": {
+   "concept": "An ordinary rooftop that turns into a throne room.",
+   "shots": [
+    {
+     "at": "0-2",
+     "role": "hero",
+     "description": "temple stare",
+     "route": "i2v",
+     "lines": [
+      "temple-key",
+      "temple"
+     ]
+    }
+   ],
+   "jobs": [
+    {
+     "line": "face",
+     "operation": "still.face",
+     "prompt": "face crop of s1",
+     "images": [
+      "s1"
+     ]
+    },
+    {
+     "line": "temple-key",
+     "operation": "still.compose",
+     "prompt": "the person from image 1, chest-up, finger at the temple",
+     "images": [
+      "s1"
+     ],
+     "takes": 3
+    },
+    {
+     "line": "temple",
+     "operation": "clip.i2v",
+     "prompt": "slow push-in",
+     "start": "@temple-key",
+     "durationSec": 2
+    }
+   ]
+  }
+ },
+ {
+  "write": "plan/estimate.json",
+  "json": {
+   "project": "$PROJECT",
+   "totalMinutes": 3.1,
+   "budgetMinutes": 60,
+   "backend": "$BACKEND",
+   "commercial": false,
+   "jobs": [
+    {
+     "line": "face",
+     "operation": "still.face",
+     "profile": "face-crop",
+     "takes": 1,
+     "video": "",
+     "minutes": 0.1
+    },
+    {
+     "line": "temple-key",
+     "operation": "still.compose",
+     "profile": "qwen21-edit",
+     "takes": 3,
+     "video": "",
+     "minutes": 1.6
+    },
+    {
+     "line": "temple",
+     "operation": "clip.i2v",
+     "profile": "wan22-14b-i2v",
+     "takes": 1,
+     "video": "2 s",
+     "minutes": 1.4
+    }
+   ],
+   "licenseWarnings": []
+  }
+ },
+ {
+  "ok": {
+   "project": "$PROJECT",
+   "totalMinutes": 3.1,
+   "budgetMinutes": 60,
+   "backend": "$BACKEND",
+   "commercial": false,
+   "jobs": [
+    {
+     "line": "face",
+     "operation": "still.face",
+     "profile": "face-crop",
+     "takes": 1,
+     "video": "",
+     "minutes": 0.1
+    },
+    {
+     "line": "temple-key",
+     "operation": "still.compose",
+     "profile": "qwen21-edit",
+     "takes": 3,
+     "video": "",
+     "minutes": 1.6
+    },
+    {
+     "line": "temple",
+     "operation": "clip.i2v",
+     "profile": "wan22-14b-i2v",
+     "takes": 1,
+     "video": "2 s",
+     "minutes": 1.4
+    }
+   ],
+   "licenseWarnings": []
+  }
+ },
+ {
+  "tool": "katana_generate",
+  "input": {
+   "project": "$PROJECT",
+   "approved": true,
+   "lines": [
+    "face"
+   ]
+  }
+ },
+ {
+  "crash": true
+ }
+]

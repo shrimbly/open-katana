@@ -2,9 +2,9 @@ import { createServer, type Server } from "node:http";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { collectOutputs, HttpBackend, onlyUnlistedModels } from "../src/comfy/backend.js";
+import { CloudBackend, collectOutputs, HttpBackend, onlyUnlistedModels } from "../src/comfy/backend.js";
 import { h3Frames, sizeForAspect, wanFrames } from "../src/comfy/graph.js";
-import { chooseProfile, submitJobs, waitJobs } from "../src/comfy/jobs.js";
+import { cancelOpenJobs, chooseProfile, type JobRecord, submitJobs, waitJobs } from "../src/comfy/jobs.js";
 import { build, defaultProfile, flux3RefTags, licenseAllows, licenseWarnings, OPERATIONS, PREFERENCE, PROFILES, profile } from "../src/comfy/operations.js";
 import { checkProfile, modelStem, resolveModels } from "../src/comfy/resolve.js";
 import { Workspace } from "../src/project/workspace.js";
@@ -137,6 +137,203 @@ describe("HTTP backend against a mock ComfyUI", () => {
     const asset = ws.asset(done[0]!.outputs[0]!);
     expect(asset.role).toBe("generated");
     expect(asset.width).toBe(320);
+  });
+});
+
+describe("cancelling a project's open jobs", () => {
+  let server: Server;
+  let url: string;
+  const calls: { path: string; body: string }[] = [];
+
+  beforeAll(async () => {
+    server = createServer(async (req, res) => {
+      const chunks: Buffer[] = [];
+      for await (const c of req) chunks.push(c as Buffer);
+      calls.push({ path: `${req.method} ${req.url}`, body: Buffer.concat(chunks).toString() });
+      res.writeHead(200, { "content-type": "application/json" }).end("{}");
+    });
+    await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+    url = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  });
+
+  afterAll(() => server?.close());
+
+  it("cancels only the open jobs on the current target, and is idempotent", async () => {
+    const backend = new HttpBackend({ kind: "http", url });
+    const ws = await Workspace.create({ title: "cancel", root: await tempDir("ok-proj-") });
+    const job = (id: string, state: JobRecord["state"], target: string, promptId?: string): JobRecord => ({
+      id, line: id.split("_")[0]!, take: 1, spec: { line: id.split("_")[0]!, operation: "still.generate", prompt: "p", takes: 1 }, profile: "z-image-turbo",
+      backend: target, ...(promptId ? { promptId } : {}), state, seed: 1, width: 64, height: 64, estimateSec: 10, submittedAt: "2026-10-17T10:00:00.000Z", outputs: [],
+    });
+    await ws.writeJson("plan/jobs.json", [
+      job("a_t1", "pending", backend.target, "p1"),
+      job("b_t1", "running", backend.target, "p2"),
+      job("c_t1", "completed", backend.target, "p3"),
+      job("d_t1", "pending", "http://elsewhere:8188", "p4"),
+      job("e_t1", "error", backend.target, "p5"),
+    ]);
+    const r = await cancelOpenJobs(ws, backend, "Cancelled in the app");
+    expect(r).toEqual({ cancelled: 2, failed: [], otherTarget: 1, unsent: 0 });
+    const deletes = calls.filter((c) => c.path === "POST /queue").map((c) => JSON.parse(c.body).delete);
+    expect(deletes).toEqual([["p1"], ["p2"]]);
+    // Neither was the prompt ComfyUI is running, so nothing is interrupted.
+    expect(calls.filter((c) => c.path === "POST /interrupt")).toHaveLength(0);
+    const jobs = (await ws.readJson<JobRecord[]>("plan/jobs.json"))!;
+    expect(jobs.map((j) => j.state)).toEqual(["cancelled", "cancelled", "completed", "pending", "error"]);
+    expect(jobs[0]).toMatchObject({ error: "Cancelled in the app" });
+    expect(jobs[0]!.finishedAt).toBeDefined();
+    const before = calls.length;
+    expect(await cancelOpenJobs(ws, backend)).toEqual({ cancelled: 0, failed: [], otherTarget: 1, unsent: 0 });
+    expect(calls.length).toBe(before);
+  });
+});
+
+describe("cancels that must be confirmed", () => {
+  const job = (id: string, state: JobRecord["state"], target: string, over: Partial<JobRecord> = {}): JobRecord => ({
+    id, line: id.split("_")[0]!, take: 1, spec: { line: id.split("_")[0]!, operation: "still.generate", prompt: "p", takes: 1 }, profile: "z-image-turbo",
+    backend: target, state, seed: 1, width: 64, height: 64, estimateSec: 10, submittedAt: new Date().toISOString(), outputs: [], ...over,
+  });
+  /** A mock ComfyUI: `running` is the prompt it executes; /history answers after `historyMs`; `status` for every POST. */
+  async function mock(o: { running?: string; historyMs?: number; status?: number; promptMs?: number } = {}) {
+    const calls: { path: string; body: string }[] = [];
+    const server = createServer(async (req, res) => {
+      const chunks: Buffer[] = [];
+      for await (const c of req) chunks.push(c as Buffer);
+      const body = Buffer.concat(chunks).toString();
+      calls.push({ path: `${req.method} ${req.url}`, body });
+      const json = (status: number, data: unknown) => res.writeHead(status, { "content-type": "application/json" }).end(JSON.stringify(data));
+      if (req.url === "/queue" && req.method === "GET") return json(200, { queue_running: o.running ? [[0, o.running]] : [], queue_pending: [] });
+      if (req.url?.startsWith("/history/")) {
+        await new Promise((r) => setTimeout(r, o.historyMs ?? 0));
+        return json(200, {});
+      }
+      if (req.url === "/prompt") {
+        await new Promise((r) => setTimeout(r, o.promptMs ?? 0));
+        return json(200, { prompt_id: JSON.parse(body).prompt_id ?? "server-id" });
+      }
+      if (req.url === "/object_info") return json(200, {});
+      json(o.status ?? 200, {});
+    });
+    await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+    return { url: `http://127.0.0.1:${(server.address() as { port: number }).port}`, calls, close: () => new Promise<void>((r) => server.close(() => r())) };
+  }
+
+  it("interrupts only the prompt ComfyUI is running, by its id", async () => {
+    const m = await mock({ running: "p2" });
+    try {
+      const backend = new HttpBackend({ kind: "http", url: m.url });
+      await backend.cancel("p1");
+      expect(m.calls.filter((c) => c.path === "POST /interrupt")).toHaveLength(0);
+      await backend.cancel("p2");
+      const interrupts = m.calls.filter((c) => c.path === "POST /interrupt");
+      expect(interrupts.map((c) => JSON.parse(c.body))).toEqual([{ prompt_id: "p2" }]);
+    } finally {
+      await m.close();
+    }
+  });
+
+  it("keeps jobs open and reports them when the backend can't confirm the cancel", async () => {
+    const m = await mock({ status: 500 });
+    const ws = await Workspace.create({ title: "cancel-fails", root: await tempDir("ok-proj-") });
+    try {
+      for (const backend of [new HttpBackend({ kind: "http", url: m.url }), new HttpBackend({ kind: "http", url: "http://127.0.0.1:9" }), new CloudBackend({ kind: "cloud", url: m.url, apiKey: "k" })]) {
+        await ws.writeJson("plan/jobs.json", [job("a_t1", "pending", backend.target, { promptId: "p1" }), job("b_t1", "running", backend.target, { promptId: "p2" })]);
+        const r = await cancelOpenJobs(ws, backend);
+        expect(r.cancelled, backend.target).toBe(0);
+        expect(r.failed.map((f) => f.id)).toEqual(["a_t1", "b_t1"]);
+        expect((await ws.readJson<JobRecord[]>("plan/jobs.json"))!.map((j) => j.state)).toEqual(["pending", "running"]);
+      }
+    } finally {
+      await m.close();
+    }
+  });
+
+  it("a cloud job that is already gone counts as cancelled", async () => {
+    const m = await mock({ status: 404 });
+    try {
+      const backend = new CloudBackend({ kind: "cloud", url: m.url, apiKey: "k" });
+      const ws = await Workspace.create({ title: "cancel-gone", root: await tempDir("ok-proj-") });
+      await ws.writeJson("plan/jobs.json", [job("a_t1", "pending", backend.target, { promptId: "p1" })]);
+      expect((await cancelOpenJobs(ws, backend)).cancelled).toBe(1);
+    } finally {
+      await m.close();
+    }
+  });
+
+  it("a wait in progress doesn't undo a cancel (its save merges)", async () => {
+    const m = await mock({ historyMs: 400 });
+    try {
+      const backend = new HttpBackend({ kind: "http", url: m.url });
+      const ws = await Workspace.create({ title: "race", root: await tempDir("ok-proj-") });
+      await ws.writeJson("plan/jobs.json", ["a_t1", "b_t1", "c_t1"].map((id, i) => job(id, "pending", backend.target, { promptId: `p${i}` })));
+      const waiting = waitJobs(ws, backend, { timeoutSec: 2, intervalSec: 0.1 });
+      await new Promise((r) => setTimeout(r, 200));
+      expect((await cancelOpenJobs(ws, backend)).cancelled).toBe(3);
+      const seen = await waiting;
+      expect(seen.map((j) => j.state)).toEqual(["cancelled", "cancelled", "cancelled"]);
+      expect((await ws.readJson<JobRecord[]>("plan/jobs.json"))!.map((j) => j.state)).toEqual(["cancelled", "cancelled", "cancelled"]);
+    } finally {
+      await m.close();
+    }
+  });
+
+  it("an aborted wait stops polling", async () => {
+    const m = await mock();
+    try {
+      const backend = new HttpBackend({ kind: "http", url: m.url });
+      const ws = await Workspace.create({ title: "abort", root: await tempDir("ok-proj-") });
+      await ws.writeJson("plan/jobs.json", [job("a_t1", "pending", backend.target, { promptId: "p1" })]);
+      const ac = new AbortController();
+      const t0 = Date.now();
+      setTimeout(() => ac.abort(), 150);
+      await waitJobs(ws, backend, { timeoutSec: 30, intervalSec: 0.05, signal: ac.signal });
+      expect(Date.now() - t0).toBeLessThan(2000);
+    } finally {
+      await m.close();
+    }
+  });
+
+  it("records a job before its submit returns, under the prompt id it asks ComfyUI to use", async () => {
+    const m = await mock({ promptMs: 500 });
+    try {
+      const backend = new HttpBackend({ kind: "http", url: m.url });
+      const ws = await Workspace.create({ title: "sending", root: await tempDir("ok-proj-") });
+      const submitting = submitJobs(ws, backend, [{ line: "plate1", operation: "still.generate", prompt: "empty street", takes: 1 }], { tier: "lite", overrides: {} });
+      await new Promise((r) => setTimeout(r, 250));
+      const during = (await ws.readJson<JobRecord[]>("plan/jobs.json"))!;
+      expect(during).toHaveLength(1);
+      expect(during[0]).toMatchObject({ id: "plate1_t1", state: "pending" });
+      expect(during[0]!.promptId).toBeUndefined();
+      const asked = during[0]!.sending!;
+      expect(asked).toMatch(/^[0-9a-f-]{36}$/);
+      const { submitted } = await submitting;
+      expect(submitted[0]!.promptId).toBe(asked);
+      expect(JSON.parse(m.calls.find((c) => c.path === "POST /prompt")!.body).prompt_id).toBe(asked);
+      const after = (await ws.readJson<JobRecord[]>("plan/jobs.json"))!;
+      expect(after[0]).toMatchObject({ promptId: asked });
+      expect(after[0]!.sending).toBeUndefined();
+    } finally {
+      await m.close();
+    }
+  });
+
+  it("a job left mid-submit by a process that died is cancelled by the id it asked for", async () => {
+    const m = await mock();
+    try {
+      const backend = new HttpBackend({ kind: "http", url: m.url });
+      const ws = await Workspace.create({ title: "orphan", root: await tempDir("ok-proj-") });
+      await ws.writeJson("plan/jobs.json", [job("a_t1", "pending", backend.target, { sending: "0b8a3c9e-1111-4222-8333-944455556666" })]);
+      const r = await cancelOpenJobs(ws, backend);
+      expect(r.cancelled).toBe(1);
+      expect(m.calls.filter((c) => c.path === "POST /queue").map((c) => JSON.parse(c.body).delete)).toEqual([["0b8a3c9e-1111-4222-8333-944455556666"]]);
+      // On a backend that picks its own ids it can't be reached: it is reported, not claimed cancelled.
+      const cloud = new CloudBackend({ kind: "cloud", url: m.url, apiKey: "k" });
+      await ws.writeJson("plan/jobs.json", [job("b_t1", "pending", cloud.target, { sending: "0b8a3c9e-1111-4222-8333-944455556667" })]);
+      expect(await cancelOpenJobs(ws, cloud)).toMatchObject({ cancelled: 0, unsent: 1 });
+      expect((await ws.readJson<JobRecord[]>("plan/jobs.json"))![0]!.state).toBe("error");
+    } finally {
+      await m.close();
+    }
   });
 });
 

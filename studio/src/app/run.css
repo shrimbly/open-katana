@@ -1,0 +1,1575 @@
+/*
+ * The run path: decode, the make sheet, progress, paused and ended cards, the result, takes and your
+ * edits (spec §4.6–4.11). Tokens come from tokens.css; sodium is you, steel is the director. Nothing
+ * here loops: activity is shown by counters, the filling Cut Map and the ticking clock.
+ *//* ---------- type roles (spec §5.2) ---------- */
+.kt .type-heading {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.25;
+  font-weight: 700;
+  font-stretch: 105%;
+}
+.kt .type-heading-caps {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 900;
+  font-stretch: 62%;
+  letter-spacing: 0.01em;
+}
+.kt .type-body-l {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 450;
+}
+.kt .type-num-xl {
+  font-family: var(--mono);
+  font-size: 48px;
+  line-height: 1;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.kt .type-num-xl small {
+  font-size: 0.45em;
+  color: var(--ash);
+  margin-left: 2px;
+}
+
+/* ---------- page frame ---------- */
+.kt .run-page,
+.kt .decode-page,
+.kt .edits-page {
+  padding-top: 20px;
+}
+.kt .page-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  min-height: 44px;
+  margin-bottom: 24px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--seam);
+}
+.kt .page-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kt .back-link {
+  color: var(--ash);
+  text-decoration: none;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.kt .back-link:hover {
+  color: var(--bone);
+}
+.kt .decode-page > .back-link {
+  display: inline-block;
+  margin-bottom: 16px;
+}
+.kt .run-page .spacer,
+.kt .make-sheet .spacer,
+.kt .sheet-actions .spacer,
+.kt .lightbox .spacer {
+  flex: 1;
+}
+.kt .form-note {
+  margin: 8px 0;
+  color: var(--ash);
+  border-left: 2px solid var(--seam-strong);
+  padding-left: 10px;
+}
+
+/* Status pills (spec §4.11). */
+.kt .pill {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 650;
+  font-stretch: 85%;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  background: var(--raised);
+  color: var(--ash);
+  border: 1px solid transparent;
+}
+.kt .pill.making {
+  background: var(--sodium-soft);
+  color: var(--sodium-hot);
+}
+.kt .pill.needs-you {
+  background: var(--sodium);
+  color: var(--sodium-ink);
+}
+.kt .pill.ready {
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok);
+}
+.kt .pill.decoded {
+  background: var(--steel-soft);
+  color: var(--steel);
+}
+.kt .pill.failed {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+.kt .pill.chat {
+  background: transparent;
+  border-color: var(--seam-strong);
+}
+.kt .pill.on-media {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 2;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.4);
+}
+.kt .pill.on-media:not(.needs-you):not(.making):not(.ready):not(.decoded):not(.failed) {
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+}
+.kt .pill.on-media.making,
+.kt .pill.on-media.ready,
+.kt .pill.on-media.decoded,
+.kt .pill.on-media.failed {
+  backdrop-filter: blur(6px);
+  background-color: color-mix(in srgb, var(--panel) 82%, transparent);
+}
+
+/* ---------- shared bits: phases, tables, facts ---------- */
+.kt .phase {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ash);
+}
+.kt .phase-mark {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--dim);
+}
+.kt .phase.done {
+  color: var(--bone);
+}
+.kt .phase.done .phase-mark {
+  border: 0;
+  background: none;
+  position: relative;
+}
+.kt .phase.done .phase-mark::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 1px;
+  width: 4px;
+  height: 7px;
+  border: solid var(--ok);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.kt .phase.now {
+  color: var(--sodium-hot);
+  font-weight: 650;
+}
+.kt .phase.now .phase-mark {
+  border: 0;
+  background: var(--sodium);
+  box-shadow: 0 0 10px var(--halo);
+}
+/* A paused or ended run: the stage it stopped in is marked, not lit. */
+.kt .phase-rail.held .phase.now {
+  color: var(--bone);
+}
+.kt .phase-rail.held .phase.now .phase-mark {
+  background: var(--seam-strong);
+  box-shadow: none;
+}
+.kt .progress-pct.held {
+  color: var(--ash);
+}
+.kt .phase-count {
+  color: var(--ash);
+  font-weight: 400;
+  font-size: 12px;
+}
+.kt .table-scroll {
+  max-width: 100%;
+}
+.kt .facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 0 0 14px;
+}
+.kt .facts dt {
+  color: var(--ash);
+}
+.kt .facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- progress (spec §4.8) ---------- */
+.kt .progress {
+  display: grid;
+  grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+  gap: 32px var(--gutter);
+  align-items: start;
+}
+.kt .progress-main {
+  min-width: 0;
+}
+.kt .progress-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.kt .progress-pct {
+  color: var(--bone);
+}
+.kt .progress-detail {
+  margin: 12px 0 0;
+  font-size: 16px;
+  color: var(--bone);
+}
+.kt .progress-time {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ash);
+}
+.kt .progress-queued {
+  margin-top: 14px;
+}
+.kt .stall-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: var(--radius-card);
+  border-left: 3px solid var(--sodium);
+  background: var(--sodium-soft);
+}
+.kt .stall-note p {
+  margin: 0;
+  flex: 1 1 260px;
+  color: var(--sodium-hot);
+}
+.kt .progress-map {
+  margin-top: 22px;
+}
+.kt .phase-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+/* Paused and ended cards sit above the takes. */
+.kt .run-card {
+  margin-top: 24px;
+  padding: 18px 20px 18px 22px;
+  border-radius: var(--radius-card);
+  background: var(--raised);
+  border-left: 3px solid var(--sodium);
+}
+.kt .run-card.ended {
+  border-left-color: var(--seam-strong);
+}
+.kt .run-card.failed {
+  border-left-color: var(--danger);
+}
+.kt .run-card.director {
+  border-left-color: var(--steel);
+}
+.kt .run-card-title {
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 0.95;
+  font-weight: 900;
+  font-stretch: 62%;
+  letter-spacing: 0.01em;
+}
+.kt .run-card-title.sentence {
+  font-size: 19px;
+  line-height: 1.2;
+  font-weight: 750;
+  font-stretch: 105%;
+  letter-spacing: -0.005em;
+}
+.kt .run-card-body {
+  margin: 0;
+  max-width: 68ch;
+  font-size: 14.5px;
+}
+.kt .run-card-body > p {
+  margin: 0 0 10px;
+}
+.kt .run-card-body code {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--panel);
+}
+.kt .run-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.kt .run-card-under {
+  margin: 10px 0 0;
+  color: var(--ash);
+  font-size: 12.5px;
+}
+.kt .card-stop {
+  margin-left: auto;
+}
+.kt .director-quote {
+  margin: 4px 0 12px;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--steel);
+  color: var(--bone);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.kt .reply {
+  display: grid;
+  gap: 6px;
+  max-width: 640px;
+}
+.kt .reply .counter {
+  justify-self: end;
+  font-size: 11px;
+  color: var(--ash);
+}
+.kt .plan {
+  margin-top: 6px;
+}
+.kt .plan-concept {
+  margin: 0 0 10px;
+  color: var(--steel);
+  font-style: italic;
+}
+.kt .plan .table-scroll {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--seam);
+  border-radius: var(--radius-input);
+}
+
+.kt .first-look {
+  margin: 24px 0 0;
+}
+.kt .first-look .label {
+  display: block;
+  margin-bottom: 8px;
+}
+.kt .first-look-media {
+  max-height: 420px;
+  max-width: 100%;
+  width: fit-content;
+  background: var(--night);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.kt .first-look-media video {
+  display: block;
+  height: 100%;
+  max-height: 420px;
+  max-width: 100%;
+}
+
+/* Takes. */
+.kt .takes {
+  margin-top: 28px;
+}
+.kt .section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.kt .section-head .label {
+  margin: 0;
+}
+.kt .take-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(150px * min(1, var(--take-ar, 0.5625) * 1.1)), 1fr));
+  gap: 14px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.kt .take {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.kt div.take {
+  cursor: default;
+}
+.kt .take-media {
+  position: relative;
+  display: block;
+  aspect-ratio: var(--take-ar, 0.5625);
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--raised);
+  outline: 1px solid var(--seam);
+  outline-offset: -1px;
+}
+.kt .take-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  animation: run-develop 360ms ease-out both;
+}
+@keyframes run-develop {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+  }
+}
+.kt .take-media.hatch {
+  background: repeating-linear-gradient(135deg, var(--raised) 0 7px, var(--panel) 7px 14px);
+}
+.kt .take:hover .take-media,
+.kt .take:focus-visible .take-media {
+  outline-color: var(--ash);
+}
+.kt .take:focus-visible {
+  outline: none;
+}
+.kt .take:focus-visible .take-media {
+  outline: 2px solid var(--sodium);
+  outline-offset: 2px;
+}
+.kt .take.kept .take-media {
+  outline: 1.5px solid var(--steel);
+}
+.kt .take.pick .take-media {
+  outline: 2px solid var(--sodium);
+}
+.kt .take.passed .take-media img {
+  opacity: 0.38;
+  filter: saturate(0.4);
+  animation: none;
+}
+.kt .take-kind {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--night) 72%, transparent);
+  color: var(--bone);
+  font-size: 8px;
+}
+.kt .take-chip {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 9.5px;
+  font-weight: 750;
+  font-stretch: 85%;
+  letter-spacing: 0.07em;
+  line-height: 1.6;
+}
+.kt .take-chip.kept {
+  color: var(--steel);
+  border: 1px solid var(--steel);
+  background: color-mix(in srgb, var(--night) 70%, transparent);
+}
+.kt .take-chip.pick {
+  position: static;
+  color: var(--sodium-ink);
+  background: var(--sodium);
+}
+.kt .take .take-chip.pick {
+  position: absolute;
+}
+.kt .take-chip.passed {
+  color: var(--ash);
+  background: color-mix(in srgb, var(--night) 70%, transparent);
+  text-decoration: line-through;
+}
+.kt .take-name {
+  font-size: 11px;
+  color: var(--ash);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kt .take.passed .take-name {
+  color: var(--dim);
+}
+.kt .take-reason {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 220px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  background: var(--panel);
+  border: 1px solid var(--seam-strong);
+  color: var(--steel);
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+.kt .take:hover .take-reason,
+.kt .take:focus-visible .take-reason {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* The right column: the director's notes (steel), the budget, notify. */
+.kt .progress-side {
+  position: sticky;
+  top: calc(var(--header-h) + 20px);
+  display: grid;
+  gap: 26px;
+  min-width: 0;
+  padding: 18px 20px;
+  border-radius: var(--radius-card);
+  background: var(--panel);
+  border: 1px solid var(--seam);
+}
+.kt .progress-side .label {
+  display: block;
+  margin: 0 0 10px;
+}
+.kt .notes .show-all.few {
+  display: none;
+}
+.kt .note-list {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+}
+.kt .note {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  padding-left: 10px;
+  border-left: 2px solid var(--steel);
+}
+.kt .note time {
+  font-size: 11.5px;
+  color: var(--steel);
+  padding-top: 2px;
+}
+.kt .note span {
+  color: var(--bone);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.kt .note:not(:first-child) span {
+  color: var(--ash);
+}
+.kt .meter-row {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 4px 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.kt .meter-name {
+  font-size: 12.5px;
+  color: var(--ash);
+}
+.kt .meter {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--raised);
+  overflow: hidden;
+}
+.kt .meter-plan {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--seam-strong);
+}
+.kt .meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--sodium);
+  transition: width 400ms var(--ease-sheet);
+}
+.kt .meter-fill.steel {
+  background: var(--steel);
+}
+.kt .meter-value {
+  grid-column: 2;
+  font-size: 12.5px;
+  color: var(--bone);
+}
+.kt .budget .kt-fine {
+  margin: 0;
+}
+.kt .notify {
+  font-size: 13px;
+}
+
+/* ---------- take lightbox (spec §4.10) ---------- */
+.kt .lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--night) 86%, transparent);
+}
+.kt .lightbox-box {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  width: min(1100px, 100%);
+  max-height: 100%;
+  padding: 14px 16px 16px;
+  border-radius: var(--radius-card);
+  background: var(--panel);
+  border: 1px solid var(--seam-strong);
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.6);
+}
+.kt .lightbox-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+.kt .lightbox-count {
+  color: var(--ash);
+}
+.kt .lightbox-media {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-height: 0;
+  justify-items: center;
+}
+.kt .lightbox-media.with-panel {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.kt .lightbox-media > img,
+.kt .lightbox-media > video {
+  max-width: 100%;
+  max-height: min(68vh, 760px);
+  border-radius: 5px;
+  background: var(--night);
+  object-fit: contain;
+}
+.kt .lightbox-panel {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  justify-items: start;
+}
+.kt .lightbox-panel img {
+  max-width: 100%;
+  max-height: min(62vh, 700px);
+  border-radius: 5px;
+  background: var(--night);
+}
+.kt .lightbox-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+}
+.kt .lightbox-verdict {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex: 1 1 260px;
+}
+.kt .verdict {
+  color: var(--steel);
+  font-size: 14px;
+}
+.kt .verdict.reject {
+  color: var(--ash);
+}
+.kt .lightbox-nav {
+  display: flex;
+  gap: 4px;
+}
+
+/* ---------- result (spec §4.9) ---------- */
+.kt .result {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 32px var(--gutter);
+  align-items: start;
+}
+.kt .result-stage {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 28px 28px 22px;
+  border-radius: var(--radius-card);
+  background: var(--night);
+  min-width: 0;
+}
+.kt .result-player,
+.kt .decode-player,
+.kt .chat-media {
+  position: relative;
+  width: min(100%, calc(min(70vh, 720px) * var(--ar, 0.5625)));
+}
+.kt .result-player .kt-media,
+.kt .decode-player .kt-media,
+.kt .chat-media .kt-media {
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+}
+.kt .result-player video,
+.kt .decode-player video,
+.kt .chat-media video,
+.kt .chat-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.kt .sound-toggle {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 3;
+  background: color-mix(in srgb, var(--night) 72%, transparent);
+  color: var(--bone);
+  border-color: transparent;
+}
+.kt .result-map {
+  width: 100%;
+}
+.kt .version-chips {
+  display: flex;
+  gap: 6px;
+  align-self: start;
+}
+.kt .result-side {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  min-width: 0;
+}
+.kt .result-title {
+  color: var(--bone);
+}
+.kt .result-facts {
+  margin: -4px 0 0;
+  color: var(--ash);
+  font-size: 13px;
+}
+.kt .result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 4px;
+}
+.kt .result-actions .btn.ghost {
+  height: var(--cta-h);
+  padding: 0 16px;
+  border-color: var(--seam-strong);
+  color: var(--bone);
+}
+.kt .result-also {
+  margin: -4px 0 0;
+  font-size: 13px;
+  color: var(--ash);
+}
+.kt .result-also a,
+.kt .licence-details a,
+.kt .more-link,
+.kt .chat-side a:not(.btn) {
+  color: var(--sodium);
+}
+.kt .result-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13.5px;
+}
+.kt .result-links .kt-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--bone);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--seam-strong);
+  text-underline-offset: 3px;
+}
+.kt .result-links .kt-link:hover {
+  text-decoration-color: var(--sodium);
+}
+.kt .export-line {
+  margin: 0;
+  font-size: 13px;
+  color: var(--sodium-hot);
+}
+.kt .result-made {
+  margin-top: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--seam);
+}
+.kt .result-made p {
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+.kt .result-made .type-heading-caps {
+  margin-bottom: 4px;
+}
+.kt .result-models {
+  color: var(--ash);
+  font-family: var(--ui);
+}
+.kt .licence-details {
+  margin: 0 0 6px;
+  padding-left: 16px;
+  max-width: 360px;
+  font-size: 12.5px;
+}
+.kt .licence-details li + li {
+  margin-top: 6px;
+}
+.kt .result-report,
+.kt .result-issues {
+  padding-top: 14px;
+  border-top: 1px solid var(--seam);
+}
+.kt .result-report .label,
+.kt .result-issues .label {
+  display: block;
+  margin: 0 0 6px;
+}
+.kt .director-voice {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--steel);
+  font-size: 15px;
+  line-height: 1.55;
+}
+.kt .director-voice p {
+  margin: 0;
+}
+.kt .director-voice > * + * {
+  margin-top: 8px;
+}
+.kt .report-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--bone);
+}
+.kt .report-label {
+  margin-right: 8px;
+  color: var(--steel);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* Takes on the result: one row under the whole result, collapsed until asked for. */
+.kt .result-takes {
+  grid-column: 1 / -1;
+  padding-top: 14px;
+  border-top: 1px solid var(--seam);
+}
+.kt .result-takes .section-head {
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 0;
+}
+.kt .result-takes-hint {
+  margin: 8px 0 12px;
+}
+.kt .result-issues ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--bone);
+}
+
+/* ---------- decode (spec §4.6) ---------- */
+.kt .decode-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 28px var(--gutter);
+  align-items: start;
+}
+.kt .decode-grid.failed {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 720px;
+}
+.kt .decode-media {
+  display: grid;
+  justify-items: center;
+  padding: 24px;
+  border-radius: var(--radius-card);
+  background: var(--night);
+  min-width: 0;
+}
+.kt .decode-player {
+  width: min(100%, calc(min(58vh, 620px) * var(--ar, 0.5625)));
+}
+.kt .decode-info {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  justify-items: start;
+  min-width: 0;
+  padding-top: 4px;
+}
+.kt .decode-file {
+  margin: 0;
+  color: var(--ash);
+  font-size: 13px;
+}
+.kt .decode-phases {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 15px;
+}
+.kt .decode-phases .phase {
+  display: grid;
+  grid-template-columns: 12px auto 1fr;
+  gap: 12px;
+}
+.kt .decode-phases .phase-count {
+  justify-self: start;
+  font-size: 13px;
+}
+.kt .stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 28px;
+  margin: 2px 0;
+}
+.kt .stat-row .kt-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.kt .stat-row .kt-stat-value,
+.kt .stat-row .kt-stat-value .mono {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 0.86em;
+  letter-spacing: -0.02em;
+  font-stretch: 100%;
+  color: var(--bone);
+}
+.kt .stat-row .kt-stat-unit {
+  color: var(--ash);
+}
+.kt .decode-read {
+  max-width: 62ch;
+  color: var(--bone);
+}
+.kt .decode-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 22px;
+  margin-top: 6px;
+}
+.kt .disabled-link {
+  position: relative;
+  color: var(--ash);
+  text-decoration: underline dotted var(--dim);
+  text-underline-offset: 3px;
+  cursor: default;
+  font-size: 13.5px;
+}
+.kt .disabled-link .tip {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 5;
+  width: 260px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: var(--panel);
+  border: 1px solid var(--seam-strong);
+  color: var(--bone);
+  font-size: 12.5px;
+  text-decoration: none;
+  opacity: 0;
+  visibility: hidden;
+}
+.kt .disabled-link:hover .tip,
+.kt .disabled-link:focus-visible .tip {
+  opacity: 1;
+  visibility: visible;
+}
+.kt .decode-lanes {
+  margin-top: 28px;
+  padding: 18px 20px;
+  border-radius: var(--radius-card);
+  background: var(--panel);
+  border: 1px solid var(--seam);
+}
+.kt .lane-note {
+  margin: 8px 0 0;
+}
+.kt .decode-shots {
+  margin-top: 22px;
+}
+.kt .decode-shots .label {
+  display: block;
+  margin: 0 0 8px;
+}
+.kt .shot-strip {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 0 0 4px;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.kt .shot-thumb {
+  display: block;
+  height: 84px;
+  aspect-ratio: var(--ar, 0.5625);
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.kt .shot-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.kt .shot-thumb:focus-visible {
+  outline-offset: 2px;
+}
+.kt .decode-status {
+  margin: 14px 0 0;
+}
+
+/* ---------- make sheet (spec §4.7) ---------- */
+.kt .make-sheet {
+  display: grid;
+  padding-bottom: 8px;
+}
+/* The sheet's header already draws the rule above the first step. */
+.kt .make-sheet > .kt-step:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.kt .field-block {
+  display: grid;
+  gap: 6px;
+  margin: 16px 0 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+/* Segments here are buttons (not labelled radios), so they need the transparent ground set. */
+.kt .make-sheet button.kt-segment {
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+}
+.kt .make-sheet button.kt-segment.on {
+  background: var(--sodium-soft);
+}
+.kt .field-block > .kt-field-label {
+  padding: 0;
+}
+.kt .track-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 4px;
+  padding: 12px;
+  border-radius: var(--radius-input);
+  background: var(--raised);
+}
+.kt .track-note {
+  margin: 0;
+  flex: 1 1 100%;
+}
+.kt .plan-first {
+  align-items: flex-start;
+  margin-top: 16px;
+}
+.kt .plan-first .kt-fine {
+  display: block;
+}
+.kt .prompt-preview {
+  margin-top: 14px;
+}
+.kt .prompt-preview summary {
+  cursor: pointer;
+  color: var(--ash);
+  font-size: 13px;
+}
+.kt .prompt-preview pre {
+  max-height: 260px;
+  overflow: auto;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-input);
+  background: var(--night);
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.kt .study-line {
+  margin: 8px 0 10px;
+}
+.kt .make-bar p {
+  margin: 0;
+}
+.kt .make-bar-sum {
+  display: none;
+  font-size: 12px;
+  color: var(--ash);
+  white-space: nowrap;
+}
+.kt .make-privacy {
+  margin-top: 10px;
+}
+.kt .approve p {
+  margin: 0 0 10px;
+}
+.kt .approve-steps,
+.kt .approve-licences {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+.kt .approve-steps li,
+.kt .approve-licences li {
+  margin-bottom: 6px;
+}
+.kt .approve .label {
+  display: block;
+  margin: 14px 0 6px;
+}
+.kt .approve a {
+  color: var(--sodium);
+}
+
+/* ---------- sheets: words, changes, save, details ---------- */
+.kt .words-sheet,
+.kt .changes-sheet,
+.kt .save-template,
+.kt .diagnostics {
+  display: grid;
+  gap: 12px;
+}
+.kt .word-rows {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.kt .word-row {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+.kt .word-time {
+  color: var(--ash);
+  font-size: 12.5px;
+}
+.kt .word-input.kt-input {
+  height: 40px;
+  font-size: 18px;
+  letter-spacing: 0.01em;
+}
+.kt .sheet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.kt .sheet-progress {
+  color: var(--sodium-hot);
+  font-size: 12.5px;
+}
+.kt .chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.kt .receipt-compact {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-input);
+  background: var(--raised);
+  color: var(--ash);
+  font-size: 13px;
+}
+.kt .save-template p {
+  margin: 0;
+}
+.kt .stderr {
+  max-height: 340px;
+  overflow: auto;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-input);
+  background: var(--night);
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.kt .warnings {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--sodium-hot);
+}
+
+/* ---------- your edits (spec §4.11) ---------- */
+.kt .edits-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin: 8px 0 24px;
+}
+.kt .edits-empty {
+  padding: 48px 0;
+}
+.kt .edits-empty p {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: var(--ash);
+}
+.kt .edits-empty strong {
+  color: var(--bone);
+}
+.kt .row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.kt .edit-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px var(--gutter);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.kt .edit-grid::after {
+  content: "";
+  flex: 999 1 200px;
+}
+.kt .edit-tile {
+  position: relative;
+  flex: var(--ar) 1 calc(var(--ar) * 300px);
+  max-width: calc(var(--ar) * 440px);
+  min-width: 0;
+}
+.kt .edit-tile-link {
+  display: grid;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+.kt .edit-tile-link .kt-media {
+  position: relative;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--night);
+  outline: 1px solid var(--seam);
+  outline-offset: -1px;
+}
+.kt .edit-tile-link .kt-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.kt .edit-tile-link:hover .edit-title {
+  color: var(--sodium-hot);
+}
+.kt .edit-tile-link:focus-visible {
+  outline: none;
+}
+.kt .edit-tile-link:focus-visible .kt-media {
+  outline: 2px solid var(--sodium);
+  outline-offset: 2px;
+}
+.kt .edit-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+.kt .edit-tile-link .kt-fine {
+  margin-top: -6px;
+}
+.kt .tile-menu {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+}
+.kt .tile-menu-btn.btn.ghost {
+  background: color-mix(in srgb, var(--night) 72%, transparent);
+  color: var(--bone);
+  font-size: 16px;
+  line-height: 1;
+}
+.kt .menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  display: grid;
+  min-width: 170px;
+  padding: 4px;
+  border-radius: 7px;
+  background: var(--panel);
+  border: 1px solid var(--seam-strong);
+  box-shadow: 0 14px 40px rgb(0 0 0 / 0.5);
+}
+.kt .menu button {
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.kt .menu button:hover,
+.kt .menu button:focus-visible {
+  background: var(--raised);
+}
+.kt .menu .danger {
+  color: var(--danger);
+}
+
+/* ---------- a project made in a chat ---------- */
+.kt .chat-view {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 32px var(--gutter);
+  align-items: start;
+}
+.kt .chat-view .chat-media {
+  justify-self: center;
+}
+.kt .chat-side {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  justify-items: start;
+}
+.kt .version-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.kt .version-list li {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+
+/* ---------- breakpoints (spec §4.15, §5.3) ---------- */
+@media (max-width: 1279px) {
+  .kt .progress {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+  .kt .result,
+  .kt .chat-view,
+  .kt .decode-grid {
+    grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+  }
+}
+@media (max-width: 759px) {
+  .kt .type-num-xl {
+    font-size: 34px;
+  }
+  .kt .progress,
+  .kt .result,
+  .kt .chat-view,
+  .kt .decode-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .kt .progress-side {
+    position: static;
+    padding: 14px 16px;
+  }
+  /* Takes two up, in two rows that scroll sideways inside their own box (spec §4.15). */
+  .kt .take-grid {
+    grid-template-columns: none;
+    grid-template-rows: repeat(2, auto);
+    grid-auto-flow: column;
+    grid-auto-columns: calc(50% - 5px);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    padding: 30px 0 6px;
+    margin-top: -30px;
+  }
+  .kt .take-grid > li {
+    scroll-snap-align: start;
+  }
+  .kt .result-stage,
+  .kt .decode-media {
+    padding: 16px;
+  }
+  .kt .lightbox {
+    padding: 0;
+  }
+  .kt .lightbox-box {
+    height: 100%;
+    border-radius: 0;
+  }
+  .kt .lightbox-media.with-panel {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+  }
+
+/* The call to action stays in reach (spec §4.15). */
+  
+  .kt .make-bar,
+  .kt .decode-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    margin: 0 calc(-1 * var(--margin));
+    padding: 10px var(--margin) calc(10px + env(safe-area-inset-bottom));
+    background: var(--panel);
+    border-top: 1px solid var(--seam);
+  }
+  /* Inside the sheet the bar spans the sheet body's own padding. */
+  .kt .make-sheet .make-bar {
+    margin: 0 -24px;
+    padding: 10px 24px calc(12px + env(safe-area-inset-bottom));
+  }
+  .kt .decode-player {
+    width: min(100%, calc(44vh * var(--ar, 0.5625)));
+  }
+  .kt .result-player,
+  .kt .chat-media {
+    width: min(100%, calc(56vh * var(--ar, 0.5625)));
+  }
+  /* Notes collapse to the newest line; Show all opens them. */
+  .kt .note-list:not(.all) .note:nth-child(n + 2) {
+    display: none;
+  }
+  .kt .notes .show-all.few {
+    display: inline-flex;
+  }
+  /* Your edits: portrait tiles two up, landscape tiles full width (as the gallery). */
+  .kt .edit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 12px;
+  }
+  .kt .edit-grid::after {
+    content: none;
+  }
+  .kt .edit-tile {
+    max-width: none;
+  }
+  .kt .edit-tile.wide {
+    grid-column: 1 / -1;
+  }
+  .kt .make-bar {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+  .kt .make-bar .kt-make-btn {
+    width: auto;
+  }
+  .kt .make-bar-sum {
+    display: block;
+  }
+  .kt .make-bar .kt-make-why {
+    grid-column: 1 / -1;
+  }
+  .kt .page-head .page-title {
+    flex: 1 1 100%;
+    order: 2;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kt .take-media img {
+    animation: none;
+  }
+  .kt .meter-fill {
+    transition: none;
+  }
+}

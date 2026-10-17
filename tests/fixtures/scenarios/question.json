@@ -1,0 +1,495 @@
+{
+ "attempts": [
+  [
+   {
+    "init": true
+   },
+   {
+    "say": "Reading the guide and checking the project."
+   },
+   {
+    "tool": "katana_guide",
+    "input": {
+     "topic": "workflow"
+    }
+   },
+   {
+    "ok": {
+     "topic": "workflow"
+    },
+    "text": "The katana workflow."
+   },
+   {
+    "tool": "katana_status",
+    "input": {
+     "project": "$PROJECT"
+    }
+   },
+   {
+    "ok": {
+     "project": "$PROJECT",
+     "stage": "intake"
+    }
+   },
+   {
+    "say": "There is no clear face in any photo. Could you add one where the face is visible and well lit?"
+   },
+   {
+    "result": {
+     "subtype": "success",
+     "total_cost_usd": 0.3,
+     "num_turns": 3,
+     "result": "There is no clear face in any photo. Could you add one where the face is visible and well lit?"
+    }
+   },
+   {
+    "exit": 0
+   }
+  ],
+  [
+   {
+    "init": true
+   },
+   {
+    "tool": "katana_status",
+    "input": {
+     "project": "$PROJECT"
+    }
+   },
+   {
+    "ok": {
+     "project": "$PROJECT",
+     "stage": "planned"
+    }
+   },
+   {
+    "say": "Planning one line per slot plus the face crop."
+   },
+   {
+    "tool": "katana_plan",
+    "input": {
+     "project": "$PROJECT",
+     "plan": {
+      "concept": "An ordinary rooftop that turns into a throne room.",
+      "shots": [
+       {
+        "at": "0-2",
+        "role": "hero",
+        "description": "temple stare",
+        "route": "i2v",
+        "lines": [
+         "temple-key",
+         "temple"
+        ]
+       }
+      ],
+      "jobs": [
+       {
+        "line": "face",
+        "operation": "still.face",
+        "prompt": "face crop of s1",
+        "images": [
+         "s1"
+        ]
+       },
+       {
+        "line": "temple-key",
+        "operation": "still.compose",
+        "prompt": "the person from image 1, chest-up, finger at the temple",
+        "images": [
+         "s1"
+        ],
+        "takes": 3
+       },
+       {
+        "line": "temple",
+        "operation": "clip.i2v",
+        "prompt": "slow push-in",
+        "start": "@temple-key",
+        "durationSec": 2
+       }
+      ]
+     }
+    }
+   },
+   {
+    "write": "plan/plan.json",
+    "json": {
+     "concept": "An ordinary rooftop that turns into a throne room.",
+     "shots": [
+      {
+       "at": "0-2",
+       "role": "hero",
+       "description": "temple stare",
+       "route": "i2v",
+       "lines": [
+        "temple-key",
+        "temple"
+       ]
+      }
+     ],
+     "jobs": [
+      {
+       "line": "face",
+       "operation": "still.face",
+       "prompt": "face crop of s1",
+       "images": [
+        "s1"
+       ]
+      },
+      {
+       "line": "temple-key",
+       "operation": "still.compose",
+       "prompt": "the person from image 1, chest-up, finger at the temple",
+       "images": [
+        "s1"
+       ],
+       "takes": 3
+      },
+      {
+       "line": "temple",
+       "operation": "clip.i2v",
+       "prompt": "slow push-in",
+       "start": "@temple-key",
+       "durationSec": 2
+      }
+     ]
+    }
+   },
+   {
+    "write": "plan/estimate.json",
+    "json": {
+     "project": "$PROJECT",
+     "totalMinutes": 3.1,
+     "budgetMinutes": 60,
+     "backend": "$BACKEND",
+     "commercial": false,
+     "jobs": [
+      {
+       "line": "face",
+       "operation": "still.face",
+       "profile": "face-crop",
+       "takes": 1,
+       "video": "",
+       "minutes": 0.1
+      },
+      {
+       "line": "temple-key",
+       "operation": "still.compose",
+       "profile": "qwen21-edit",
+       "takes": 3,
+       "video": "",
+       "minutes": 1.6
+      },
+      {
+       "line": "temple",
+       "operation": "clip.i2v",
+       "profile": "wan22-14b-i2v",
+       "takes": 1,
+       "video": "2 s",
+       "minutes": 1.4
+      }
+     ],
+     "licenseWarnings": []
+    }
+   },
+   {
+    "ok": {
+     "project": "$PROJECT",
+     "totalMinutes": 3.1,
+     "budgetMinutes": 60,
+     "backend": "$BACKEND",
+     "commercial": false,
+     "jobs": [
+      {
+       "line": "face",
+       "operation": "still.face",
+       "profile": "face-crop",
+       "takes": 1,
+       "video": "",
+       "minutes": 0.1
+      },
+      {
+       "line": "temple-key",
+       "operation": "still.compose",
+       "profile": "qwen21-edit",
+       "takes": 3,
+       "video": "",
+       "minutes": 1.6
+      },
+      {
+       "line": "temple",
+       "operation": "clip.i2v",
+       "profile": "wan22-14b-i2v",
+       "takes": 1,
+       "video": "2 s",
+       "minutes": 1.4
+      }
+     ],
+     "licenseWarnings": []
+    }
+   },
+   {
+    "say": "Shooting the stills."
+   },
+   {
+    "tool": "katana_generate",
+    "input": {
+     "project": "$PROJECT",
+     "approved": true,
+     "lines": [
+      "face",
+      "temple-key"
+     ]
+    }
+   },
+   {
+    "appendJob": {
+     "line": "face",
+     "operation": "still.face",
+     "profile": "face-crop",
+     "promptId": "p-face",
+     "state": "completed",
+     "outputs": [
+      "face_t1"
+     ],
+     "estimateSec": 6
+    }
+   },
+   {
+    "appendJob": {
+     "line": "temple-key",
+     "operation": "still.compose",
+     "promptId": "p-key-1",
+     "state": "completed",
+     "outputs": [
+      "temple-key_t1"
+     ]
+    }
+   },
+   {
+    "appendJob": {
+     "line": "temple-key",
+     "operation": "still.compose",
+     "promptId": "p-key-2",
+     "state": "completed",
+     "outputs": [
+      "temple-key_t2"
+     ]
+    }
+   },
+   {
+    "ok": {
+     "jobs": [
+      {
+       "id": "face_t1"
+      },
+      {
+       "id": "temple-key_t1"
+      },
+      {
+       "id": "temple-key_t2"
+      }
+     ]
+    }
+   },
+   {
+    "tool": "katana_wait",
+    "input": {
+     "project": "$PROJECT"
+    }
+   },
+   {
+    "heartbeat": 30
+   },
+   {
+    "ok": {
+     "jobs": []
+    }
+   },
+   {
+    "tool": "katana_judge",
+    "input": {
+     "project": "$PROJECT",
+     "asset": "temple-key_t1",
+     "verdict": "reject",
+     "reason": "different jaw"
+    }
+   },
+   {
+    "ok": {
+     "verdict": "reject"
+    }
+   },
+   {
+    "tool": "katana_judge",
+    "input": {
+     "project": "$PROJECT",
+     "asset": "temple-key_t2",
+     "verdict": "accept",
+     "reason": "strong likeness"
+    }
+   },
+   {
+    "write": "qa/verdicts.json",
+    "json": [
+     {
+      "asset": "temple-key_t1",
+      "verdict": "reject",
+      "reason": "different jaw",
+      "at": "2026-10-17T10:00:00.000Z"
+     },
+     {
+      "asset": "temple-key_t2",
+      "verdict": "accept",
+      "reason": "strong likeness",
+      "at": "2026-10-17T10:00:01.000Z"
+     }
+    ]
+   },
+   {
+    "ok": {
+     "verdict": "accept"
+    }
+   },
+   {
+    "say": "Rolling the clip."
+   },
+   {
+    "tool": "katana_generate",
+    "input": {
+     "project": "$PROJECT",
+     "approved": true,
+     "lines": [
+      "temple"
+     ]
+    }
+   },
+   {
+    "appendJob": {
+     "line": "temple",
+     "operation": "clip.i2v",
+     "profile": "wan22-14b-i2v",
+     "promptId": "p-clip",
+     "state": "completed",
+     "outputs": [
+      "temple_t1"
+     ],
+     "durationSec": 2,
+     "estimateSec": 80
+    }
+   },
+   {
+    "ok": {
+     "jobs": [
+      {
+       "id": "temple_t1"
+      }
+     ]
+    }
+   },
+   {
+    "say": "Cutting the edit on the grid."
+   },
+   {
+    "tool": "katana_edit",
+    "input": {
+     "project": "$PROJECT",
+     "fromPreset": {
+      "slots": {
+       "temple": "temple_t1"
+      }
+     }
+    }
+   },
+   {
+    "write": "render/edl.json",
+    "json": {
+     "canvas": {
+      "width": 1080,
+      "height": 1920,
+      "fps": 60,
+      "durationSec": 16.433
+     },
+     "grid": {
+      "bpm": 144,
+      "phase": 0.5
+     },
+     "audio": {
+      "asset": "music",
+      "offset": 0
+     },
+     "shots": [
+      {
+       "start": 0,
+       "end": 16.433,
+       "source": {
+        "asset": "black"
+       }
+      }
+     ],
+     "text": [
+      {
+       "text": "NOTHING NEW",
+       "start": "b1.28",
+       "end": "b2",
+       "font": "League Gothic"
+      }
+     ]
+    }
+   },
+   {
+    "ok": {
+     "shots": 49
+    }
+   },
+   {
+    "tool": "katana_render",
+    "input": {
+     "project": "$PROJECT",
+     "preview": false
+    }
+   },
+   {
+    "ok": {
+     "mode": "master"
+    }
+   },
+   {
+    "tool": "katana_deliver",
+    "input": {
+     "project": "$PROJECT"
+    }
+   },
+   {
+    "addVersion": {
+     "note": "made in the app"
+    }
+   },
+   {
+    "ok": {
+     "project": "$PROJECT",
+     "version": 1,
+     "path": "deliver/hype-energy_v1.mp4",
+     "sizeMB": 0.1,
+     "durationSec": 16.433
+    }
+   },
+   {
+    "say": "Hype Energy on a rooftop car park, 16.4 s.\nMade 1 face crop, 3 keyframes and 1 clip.\nKATANA_REPORT {\"issues\":[\"Hands warp briefly in the spin.\"]}"
+   },
+   {
+    "result": {
+     "subtype": "success",
+     "total_cost_usd": 2.1,
+     "num_turns": 24,
+     "duration_ms": 1500,
+     "result": "Hype Energy on a rooftop car park, 16.4 s.\nMade 1 face crop, 3 keyframes and 1 clip.\nKATANA_REPORT {\"issues\":[\"Hands warp briefly in the spin.\"]}"
+    }
+   },
+   {
+    "exit": 0
+   }
+  ]
+ ]
+}

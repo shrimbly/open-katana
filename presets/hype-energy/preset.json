@@ -17,6 +17,100 @@
     "music": "optional",
     "instructionsMaxChars": 2000
   },
+  "display": { "font": "League Gothic", "weight": 400, "italic": true, "case": "upper", "color": "#FEFBF3" },
+  "timing": { "dropBeat": 18.5 },
+  "soundtrack": {
+    "file": "soundtrack.m4a",
+    "title": "Hype Energy theme",
+    "artist": "open-katana",
+    "licence": "MIT (original, generated with ACE-Step 1.5 XL)",
+    "bpm": 144,
+    "dropSec": 8.21
+  },
+  "example": {
+    "video": "example.mp4",
+    "poster": "poster.jpg",
+    "credit": "Example made with open-katana: a fictional person (generated with Z-Image Turbo) on an original ACE-Step 1.5 XL track.",
+    "models": ["birefnet", "qwen21-edit", "wan22-14b-flf", "wan22-14b-i2v"]
+  },
+  "cutmap": "cutmap.json",
+  "brief": [
+    {
+      "id": "who",
+      "label": "Who are you, plainly?",
+      "help": "Plain on purpose: the drop flips it. Up to 13 letters so it fits the frame.",
+      "kind": "text",
+      "binds": [{ "index": 0 }],
+      "default": "NOTHING NEW",
+      "maxChars": 13,
+      "suggestions": ["NEW IN TOWN", "NINE TO FIVE", "QUIET ONE", "BACK ROW KID"]
+    },
+    {
+      "id": "day",
+      "label": "And your day?",
+      "kind": "text",
+      "binds": [{ "index": 1 }],
+      "default": "SAME OLD DAY",
+      "maxChars": 13,
+      "suggestions": ["SAME COMMUTE", "LAST CLASS", "NIGHT SHIFT", "ANY TUESDAY"]
+    },
+    {
+      "id": "doubt",
+      "label": "The doubt, right before the drop",
+      "kind": "text",
+      "binds": [{ "index": 2 }],
+      "default": "IS THAT ALL?",
+      "maxChars": 14,
+      "suggestions": ["OR IS IT?", "RIGHT?", "THAT'S IT?"]
+    },
+    {
+      "id": "drop",
+      "label": "Two words that slam in on the drop",
+      "help": "One word per flash-cut, huge.",
+      "kind": "words",
+      "binds": [{ "index": 3 }, { "index": 4 }],
+      "default": ["BORN", "DIFFERENT"],
+      "maxChars": 9,
+      "suggestions": [["BUILT", "DIFFERENT"], ["MAIN", "EVENT"], ["LOCKED", "IN"], ["NO", "LIMITS"]]
+    },
+    {
+      "id": "slam",
+      "label": "One word, on its own",
+      "help": "Lands alone after the photo cards.",
+      "kind": "text",
+      "binds": [{ "index": 5 }],
+      "default": "PERIOD",
+      "maxChars": 8,
+      "suggestions": ["FACTS", "ALWAYS", "SEALED", "NEXT"]
+    },
+    {
+      "id": "closer",
+      "label": "The last line",
+      "kind": "text",
+      "binds": [{ "index": 6 }],
+      "default": "CROWN ACCEPTED",
+      "maxChars": 16,
+      "suggestions": ["ERA STARTS NOW", "AURA +1000", "THRONE SECURED", "UNBOTHERED"],
+      "collapsed": false
+    },
+    {
+      "id": "place",
+      "label": "Where's your everyday?",
+      "kind": "text",
+      "default": "a rooftop car park",
+      "maxChars": 60,
+      "prompt": "Place: {value}, the whole edit happens here, soft overcast daylight.",
+      "suggestions": ["a train platform at dusk", "a quiet campus courtyard", "a corner shop at night", "a laundromat"]
+    },
+    {
+      "id": "outfit",
+      "label": "Keep my outfit from the photo",
+      "kind": "toggle",
+      "default": true,
+      "promptOn": "Wardrobe: exactly as in the photos.",
+      "promptOff": "Wardrobe: the director styles a look that fits the place; keep the face exactly."
+    }
+  ],
   "recipe": {
     "look": "Natural overcast daylight in one everyday location, soft and slightly warm with lifted blacks (black trousers read as #3B3B3A) and muted greens; no stylised grade. Closest built-in: dreamy (or none if the generated clips are already soft). Flash-cuts are a warm cream tint (#F3EACD) that washes over the titles. Two shots drop the background to pure black (subject matte over #000000).",
     "fonts": [

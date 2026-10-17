@@ -7,6 +7,8 @@ import { checkProfile } from "./comfy/resolve.js";
 import { effectiveBackend, loadConfig } from "./config.js";
 import { analyzeReference } from "./engine/analyze.js";
 import { createServer, VERSION } from "./server/server.js";
+import { installMcpShutdown } from "./server/shutdown.js";
+import { securePrivateDirs } from "./util/paths.js";
 
 const HELP = `open-katana ${VERSION}
 
@@ -14,8 +16,13 @@ Usage:
   open-katana mcp                      Run the MCP server on stdio (for Claude Code / Claude Desktop)
   open-katana analyze <video> [dir]    Analyze a reference edit and write sheets + JSON to dir
   open-katana backend                  Check the configured ComfyUI and which profiles can run
-  open-katana studio [project] [--port N] [--no-open]
-                                       Open the timeline editor in your browser (--no-open only prints its URL)
+  open-katana app [--port N] [--no-open] [--replace]
+                                       Open the app: templates, decode, make and your edits (default port 4310;
+                                       --no-open only prints its URL; --replace restarts a running app)
+  open-katana studio [project] [--port N] [--no-open] [--replace]
+                                       Open the timeline editor in the same app
+  open-katana runs list                List edits being made, waiting for you or finished
+  open-katana runs cancel <runId>      Stop an edit (shots already made are kept)
   open-katana --version
 
 Environment:
@@ -30,9 +37,19 @@ async function main(argv: string[]): Promise<void> {
   const [cmd, ...rest] = argv;
   switch (cmd) {
     case "mcp": {
+      void securePrivateDirs();
       const server = createServer();
+      installMcpShutdown(server);
       await server.connect(new StdioServerTransport());
       return;
+    }
+    case "app": {
+      const { appCommand } = await import("./app/cli-app.js");
+      return appCommand(rest);
+    }
+    case "runs": {
+      const { runsCommand } = await import("./app/cli-app.js");
+      return runsCommand(rest);
     }
     case "analyze": {
       const [video, dir] = rest;
@@ -59,19 +76,8 @@ async function main(argv: string[]): Promise<void> {
       return;
     }
     case "studio": {
-      const { sharedStudio } = await import("./studio/server.js");
-      const portIdx = rest.indexOf("--port");
-      const port = portIdx >= 0 ? Number(rest[portIdx + 1]) : 4310;
-      const project = rest.find((r, i) => !r.startsWith("--") && rest[i - 1] !== "--port");
-      const studio = await sharedStudio(port);
-      const url = studio.url(project);
-      process.stdout.write(`open-katana studio: ${url}\n`);
-      if (!rest.includes("--no-open")) {
-        const { spawn } = await import("node:child_process");
-        spawn(process.platform === "darwin" ? "open" : process.platform === "win32" ? "explorer" : "xdg-open", [url], { stdio: "ignore", detached: true }).unref();
-      }
-      await new Promise(() => undefined);
-      return;
+      const { studioCommand } = await import("./app/cli-app.js");
+      return studioCommand(rest);
     }
     case "--version":
     case "-v":

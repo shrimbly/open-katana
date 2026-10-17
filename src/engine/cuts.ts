@@ -54,6 +54,34 @@ const SAME_CONTENT = 0.3;
 const SAME_STRUCTURE = 0.88;
 /** Below this correlation, the frames either side of a flash show different pictures. */
 const HIDDEN_CUT_STRUCTURE = 0.55;
+/** Below this luma spread (standard deviation, 0–255) a thumbnail is flat and has no structure to correlate. */
+const FLAT_STD = 6;
+/** Two flat thumbnails further apart than this (mean luma difference, 0–1) are different pictures. */
+const FLAT_DIFFERS = 0.08;
+
+function lumaStd(a: Uint8Array): number {
+  let sum = 0;
+  let sq = 0;
+  for (let i = 0; i < a.length; i++) {
+    sum += a[i]!;
+    sq += a[i]! * a[i]!;
+  }
+  const mean = sum / a.length;
+  return Math.sqrt(Math.max(0, sq / a.length - mean * mean));
+}
+
+/**
+ * True when two thumbnails show different compositions. Correlation is undefined on a flat frame (a
+ * solid colour, a black card), so flat frames are compared by tone instead: flat against textured
+ * differs, and two flat frames differ when their brightness does.
+ */
+function compositionDiffers(a: Uint8Array, b: Uint8Array): boolean {
+  const flatA = lumaStd(a) < FLAT_STD;
+  const flatB = lumaStd(b) < FLAT_STD;
+  if (flatA && flatB) return pixelDistance(a, b) > FLAT_DIFFERS;
+  if (flatA || flatB) return true;
+  return correlation(a, b) < HIDDEN_CUT_STRUCTURE;
+}
 
 /** Time (seconds) of frame `i`; falls back to i/fps past the end of the PTS list. */
 export function frameTime(pts: number[], fps: number, i: number): number {
@@ -104,7 +132,7 @@ function detectFlashes(f: FrameFeatures, pts: number[], fps: number): FlashEvent
     const hidesCut =
       i > 0 &&
       end + 1 < f.count &&
-      (histDistance(f.hist[before]!, f.hist[after]!) > SAME_CONTENT || correlation(f.gray[before]!, f.gray[after]!) < HIDDEN_CUT_STRUCTURE);
+      (histDistance(f.hist[before]!, f.hist[after]!) > SAME_CONTENT || compositionDiffers(f.gray[before]!, f.gray[after]!));
     events.push({
       startFrame: i,
       endFrame: end + 1,
@@ -121,11 +149,21 @@ function detectFlashes(f: FrameFeatures, pts: number[], fps: number): FlashEvent
 }
 
 /**
+ * The lowest boundary score that can be a cut. Low enough for hard cuts in dark or low-contrast footage
+ * (night shots score 0.14–0.2 against 0.00–0.02 around them); the local-median threshold keeps busy
+ * footage from cutting on every frame.
+ */
+export const MIN_CUT_SCORE = 0.12;
+
+/** A same-structure jump has to be at least this strong to count as a tonal pulse (a flash-like hit). */
+const PULSE_MIN_SCORE = 0.2;
+
+/**
  * Detects hard cuts, flash-hidden cuts, dissolves and one-frame inserts.
  * Automated boundaries are a starting point: the agent verifies them against contact sheets.
  */
 export function detectCuts(f: FrameFeatures, pts: number[], fps: number, opts: CutOptions = {}): CutDetection {
-  const minScore = opts.minScore ?? 0.2;
+  const minScore = opts.minScore ?? MIN_CUT_SCORE;
   const localFactor = opts.localFactor ?? 2.5;
   const scores = boundaryScores(f);
   const flashes = detectFlashes(f, pts, fps);
@@ -149,11 +187,26 @@ export function detectCuts(f: FrameFeatures, pts: number[], fps: number, opts: C
     }
   }
 
-  // Tonal pulses: the picture keeps its structure across the boundary, only tone or colour jumps.
+  // Tonal pulses: the picture keeps its structure across the boundary, only tone or colour jumps. A cut
+  // hidden under a flash is not one (its first frame is the new shot, still brightened), and the frames
+  // fading out of a flash are that flash, not flashes of their own.
+  const flashOver = flashes.filter((fl) => fl.kind !== "pulse");
+  let pulse: FlashEvent | undefined;
   for (const i of [...candidates].sort((a, b) => a - b)) {
+    if (transition.get(i) === "flash") continue;
     if (correlation(f.gray[i - 1]!, f.gray[i]!) < SAME_STRUCTURE) continue;
     candidates.delete(i);
-    flashes.push({
+    // A small tonal shift (a grade drifting, an exposure change) is neither a cut nor a flash.
+    if (scores[i]! < PULSE_MIN_SCORE) continue;
+    // A flash fading out, or a glow over several frames, is one event: it grows by this frame.
+    const fading = flashOver.find((fl) => i >= fl.endFrame && i <= fl.endFrame + 2) ?? (pulse?.endFrame === i ? pulse : undefined);
+    if (fading) {
+      fading.endFrame = i + 1;
+      fading.endSec = round(frameTime(pts, fps, i + 1));
+      fading.intensity = Math.max(fading.intensity, round(scores[i]!));
+      continue;
+    }
+    pulse = {
       startFrame: i,
       endFrame: i + 1,
       peakFrame: i,
@@ -162,7 +215,8 @@ export function detectCuts(f: FrameFeatures, pts: number[], fps: number, opts: C
       kind: "pulse",
       intensity: round(scores[i]!),
       hidesCut: false,
-    });
+    };
+    flashes.push(pulse);
   }
   flashes.sort((a, b) => a.startFrame - b.startFrame);
 

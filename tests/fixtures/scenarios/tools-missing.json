@@ -1,0 +1,21 @@
+[
+ {
+  "init": "no-katana"
+ },
+ {
+  "say": "I have no katana tools."
+ },
+ {
+  "sleep": 60000
+ },
+ {
+  "result": {
+   "subtype": "success",
+   "total_cost_usd": 0.1,
+   "result": "No tools."
+  }
+ },
+ {
+  "exit": 0
+ }
+]

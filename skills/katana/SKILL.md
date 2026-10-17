@@ -77,6 +77,8 @@ already written: plan one generation line per `still`/`clip` slot, following its
 guidance but describing this user's subject, outfit and setting; `graphic` slots are built in the
 edit (layers, tiles, colour cards) and `footage` slots take the user's clips. Still read the whole
 reference first: the skeleton is a starting point you check against it, not a substitute.
+Name the lines after the slots: `"<slot>-key"` for a slot's keyframe, `"<slot>"` for its clip,
+still or cut-out, and `"face"` for the face crop. Without slots, use short lowercase names.
 
 `katana_plan` returns an estimate (GPU minutes per job, total, and Comfy Cloud notes).
 
@@ -163,7 +165,9 @@ then rewrite its text for this user and save the adjusted EDL:
 - Text behind the subject (giant words the hero stands in front of): run a `matte` job with
   `start` set to the clip, put its output in that shot's `source.matte`, and mark the text
   `behind: true`. Outside matted shots the same text simply stays on top.
-- Music: the reference track by default (`audio.asset: "ref"`), or the user's track.
+- Music: the reference track by default (`audio.asset: "ref"`), or the user's track. A preset
+  started without a reference or music brings its own track as asset `music`; `katana_edit fromPreset`
+  refits the skeleton's beat grid to a user track it wasn't timed to.
 - Sound effects (`sfx` cues) under the music: whooshes on whip transitions, hits on drops and
   punch-ins, risers into the drop, ticks for typewriter text. Prefer recorded effects the user
   supplies (audio assets); the built-ins (`whoosh`, `hit`, `boom`, `riser`, `tick`, `glitch`) are
@@ -182,6 +186,19 @@ did not intend. Fix in the EDL first; regenerate only when a generated shot is w
 is, its length, what was generated vs reused, compute used, and any known flaws, and include the
 editor link from `katana_studio` so the user can adjust text, timing and clips themselves. No offers
 or questions at the end.
+
+### Runs started by the app
+
+The open-katana app can start you headless as the director of one project. Its system prompt says
+so, and its rules win where they differ from this guide. The project already exists and holds the
+person's photos and track: call `katana_status` with its id, never `katana_start` or
+`katana_import`, and leave the backend alone. The person approved the spend in the app, so pass
+`approved: true`; the tools hold you to the approved GPU minutes. Their words are already on the
+text cards (or listed as WORDS) and their take picks are final: keep both exactly. A tool error that
+starts with `[WORDS]` or `[USER_PICK]` says what to fix, so fix it and carry on; one that starts with
+`[APPROVAL]`, `[BUDGET]`, `[OUT_OF_CREDITS]`, `[BACKEND]`, `[LOCKED]` or `[STOPPED]` means stop and
+say in one line what you need. In a chat, a project the app is still making answers `[LOCKED]`:
+stop it in the app first.
 
 ### Refinements
 

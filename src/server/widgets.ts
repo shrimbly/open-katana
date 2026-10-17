@@ -7,6 +7,7 @@ import { type McpServer, ResourceTemplate } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { Workspace } from "../project/workspace.js";
 import { dataHome, packageRoot } from "../util/paths.js";
+import { appRun, refuseInAppRun } from "./app-mode.js";
 import { result, safe } from "./content.js";
 import type { State } from "./state.js";
 
@@ -19,7 +20,23 @@ export const WIDGETS = {
 /** `_meta` that binds a tool to a widget (current MCP Apps key plus the legacy flat key). */
 export const widgetMeta = (uri: string) => ({ ui: { resourceUri: uri }, "ui/resourceUri": uri });
 
-const MIME: Record<string, string> = { ".mp4": "video/mp4", ".mov": "video/quicktime", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp" };
+const MIME: Record<string, string> = {
+  ".mp4": "video/mp4",
+  ".mov": "video/quicktime",
+  ".m4v": "video/x-m4v",
+  ".webm": "video/webm",
+  ".mkv": "video/x-matroska",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".m4a": "audio/mp4",
+  ".aac": "audio/aac",
+  ".flac": "audio/flac",
+  ".ogg": "audio/ogg",
+};
 const MAX_RESOURCE_BYTES = 60 * 2 ** 20;
 const MAX_UPLOAD_BYTES = 200 * 2 ** 20;
 
@@ -42,6 +59,9 @@ export function registerWidgets(server: McpServer, _state: State): void {
     new ResourceTemplate("katana://media/{project}/{+path}", { list: undefined }),
     { title: "open-katana project media", description: "A file inside an open-katana project (render, delivery or asset)" },
     async (uri, vars) => {
+      // App runs only ever see their own project.
+      const pinned = appRun()?.project;
+      if (pinned && String(vars.project) !== pinned) throw new Error(`[LOCKED] This run only works on project ${pinned}.`);
       const ws = await Workspace.open(String(vars.project));
       const rel = normalize(String(vars.path));
       if (rel.startsWith("..") || rel.startsWith("/")) throw new Error("Path escapes the project");
@@ -67,6 +87,7 @@ export function registerWidgets(server: McpServer, _state: State): void {
       _meta: { ui: { visibility: ["app"] } },
     },
     safe(async ({ name, data, uploadId, final }) => {
+      refuseInAppRun();
       const inbox = join(dataHome(), "inbox");
       await mkdir(inbox, { recursive: true });
       const id = uploadId ?? randomBytes(6).toString("hex");

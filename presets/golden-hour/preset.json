@@ -5,6 +5,42 @@
   "category": "personalized_edits",
   "format": { "aspect": "9:16", "durationSec": 14, "fps": 30 },
   "inputs": { "images": { "min": 1, "max": 5, "title": "Your character (face and full outfit)" }, "music": "optional", "instructionsMaxChars": 2000 },
+  "display": { "font": "Playfair Display", "weight": 400, "italic": true, "case": "lower", "color": "#F6C177" },
+  "soundtrack": {
+    "file": "soundtrack.m4a",
+    "title": "Golden Hour theme",
+    "artist": "open-katana",
+    "licence": "MIT (original, generated with ACE-Step 1.5 XL)",
+    "bpm": 100
+  },
+  "example": {
+    "video": "example.mp4",
+    "poster": "poster.jpg",
+    "credit": "Example made with open-katana: a fictional person (generated with Z-Image Turbo) on an original ACE-Step 1.5 XL track.",
+    "models": ["qwen21-edit", "wan22-14b-flf", "wan22-14b-i2v", "z-image-turbo"]
+  },
+  "cutmap": "cutmap.json",
+  "brief": [
+    {
+      "id": "caption",
+      "label": "Your caption",
+      "help": "Lower case, italic serif.",
+      "kind": "text",
+      "verbatim": true,
+      "default": "romanticise the ordinary",
+      "maxChars": 32,
+      "suggestions": ["lead role, minor plot", "golden hour, again", "this is my era", "soft era"]
+    },
+    {
+      "id": "place",
+      "label": "Where's your golden hour?",
+      "kind": "text",
+      "default": "a city crosswalk",
+      "maxChars": 60,
+      "prompt": "Place: {value} at golden hour.",
+      "suggestions": ["a beach path", "a rooftop", "a wheat field", "a train window seat"]
+    }
+  ],
   "recipe": {
     "look": "warm-film to dreamy grade, lifted blacks, halation glow, medium grain",
     "fonts": ["Playfair Display", "Cormorant Garamond"],

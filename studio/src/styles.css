@@ -2,45 +2,13 @@
  * open-katana studio.
  * Neutral graphite surround so the picture's colour reads true; sodium amber (the street light of
  * night edits) marks the playhead, the beat grid and whatever is selected.
+ * Fonts and colour tokens live in tokens.css, shared with the app.
  */
-@font-face {
-  font-family: "Archivo";
-  src: url("/fonts/Archivo_wdth,wght_.ttf") format("truetype");
-  font-weight: 100 900;
-  font-stretch: 62% 125%;
-  font-display: swap;
-}
-@font-face {
-  font-family: "JetBrains Mono";
-  src: url("/fonts/JetBrainsMono_wght_.ttf") format("truetype");
-  font-weight: 100 800;
-  font-display: swap;
-}
 
 :root {
-  --ground: #131416;
-  --panel: #1a1c1f;
-  --raised: #23262a;
-  --seam: #2d3035;
-  --seam-strong: #3a3e44;
-  --bone: #ece7dc;
-  --ash: #9a9ea6;
-  --dim: #646971;
-  --sodium: #f2a33a;
-  --sodium-soft: rgba(242, 163, 58, 0.16);
-  --sodium-ink: #1d1407;
-  --steel: #7aa6cc;
-  --chip: #e2dccf;
-  --chip-ink: #17181b;
-  --danger: #e8604f;
-  --ok: #8fbf7a;
-  --ui: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --header-h: 52px;
-  --head-w: 104px;
-  color-scheme: dark;
+  /* The soundtrack waveform in the timeline. */
+  --wave: rgba(154, 158, 166, 0.55);
 }
-
 * {
   box-sizing: border-box;
 }
@@ -91,6 +59,43 @@ textarea {
   height: 100vh;
   overflow: hidden;
 }
+/* While an app run holds the project the editor is read-only, with a banner under the topbar. */
+.app.locked {
+  grid-template-rows: var(--header-h) 40px minmax(0, 1fr) 6px var(--timeline-h, 320px);
+}
+.lock-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 0 16px 0 13px;
+  border-left: 3px solid var(--sodium);
+  border-bottom: 1px solid var(--seam);
+  background: var(--raised);
+  font-size: 13px;
+}
+.lock-banner span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lock-banner a {
+  color: var(--sodium);
+  white-space: nowrap;
+  text-decoration: none;
+  font-weight: 600;
+}
+.lock-banner a:hover {
+  text-decoration: underline;
+}
+.inspector-lock {
+  display: contents;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
 .topbar {
   display: flex;
   align-items: center;
@@ -117,6 +122,12 @@ textarea {
 }
 .brand a:hover {
   color: var(--bone);
+}
+.brand a.back {
+  font-size: 12.5px;
+  font-stretch: 100%;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .title {
   font-size: 19px;
@@ -332,10 +343,10 @@ textarea {
   background: rgba(0, 0, 0, 0.7);
   color: var(--bone);
 }
-.asset .badge.rejected {
+.asset .badge.reject {
   color: var(--danger);
 }
-.asset .badge.accepted {
+.asset .badge.accept {
   color: var(--ok);
 }
 .audio-asset {
@@ -1105,6 +1116,14 @@ input[type="color"] {
     height: auto;
     min-height: 100vh;
     overflow: visible;
+  }
+  .lock-banner {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding: 10px 16px 10px 13px;
+  }
+  .lock-banner span {
+    white-space: normal;
   }
   .topbar {
     order: 0;

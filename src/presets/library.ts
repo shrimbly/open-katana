@@ -7,6 +7,41 @@ import { dataHome, packageRoot } from "../util/paths.js";
 
 export const CATEGORIES = ["personalized_edits", "style_transfer", "motion_transfer"] as const;
 
+/** One field of a template's brief: the words and choices the app asks for (spec §12.1). */
+export const BriefFieldSchema = z.object({
+  id: z.string().regex(/^[a-z][a-z0-9_]{0,31}$/),
+  label: z.string().max(90),
+  help: z.string().max(160).optional(),
+  kind: z.enum(["text", "words", "choice", "color", "toggle"]),
+  required: z.boolean().default(false),
+  default: z.union([z.string(), z.array(z.string()), z.boolean()]).optional(),
+  placeholder: z.union([z.string(), z.array(z.string())]).optional(),
+  options: z.array(z.string().max(40)).max(8).optional(),
+  allowOther: z.boolean().default(false),
+  optionPrompts: z.record(z.string(), z.string().max(300)).optional(),
+  suggestions: z.array(z.union([z.string().max(60), z.array(z.string().max(40))])).max(8).default([]),
+  maxChars: z.number().int().min(1).max(200).optional(),
+  count: z.number().int().min(1).max(10).optional(),
+  binds: z.array(z.object({ index: z.number().int().min(0), format: z.string().max(40).optional() })).default([]),
+  verbatim: z.boolean().default(false),
+  recolor: z.array(z.object({ from: z.string().regex(/^#[0-9a-fA-F]{6}$/), lightness: z.number().min(0).max(1).optional() })).optional(),
+  prompt: z.string().max(300).optional(),
+  promptOn: z.string().max(300).optional(),
+  promptOff: z.string().max(300).optional(),
+  collapsed: z.boolean().default(false),
+});
+
+/**
+ * A file a template folder serves to the app: a plain name (no folders) of a media or JSON type, so a
+ * shared template can't hand the app a page or script to open.
+ */
+const servedFile = (exts: string, what: string) =>
+  z.string().regex(new RegExp(`^[A-Za-z0-9][A-Za-z0-9_.-]*\\.(${exts})$`, "i"), `${what} must be a plain file name ending in .${exts.split("|").join(", .")}`);
+const VIDEO_FILE = servedFile("mp4|webm|mov|m4v", "The example video");
+const IMAGE_FILE = servedFile("jpg|jpeg|png|webp", "The poster");
+const AUDIO_FILE = servedFile("m4a|mp3|wav|aac|flac|ogg", "The soundtrack");
+const JSON_FILE = servedFile("json", "The cut map");
+
 export const PresetSchema = z.object({
   slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   title: z.string(),
@@ -60,6 +95,39 @@ export const PresetSchema = z.object({
   /** Author's creative context; @image1.. refer to the user's images in order. */
   prompt: z.string().max(4000).default(""),
   author: z.string().default("open-katana"),
+  /** How the template's title is set in the app: its own edit font, weight, case and accent colour. */
+  display: z
+    .object({
+      font: z.string(),
+      weight: z.number().int().default(400),
+      italic: z.boolean().default(false),
+      case: z.enum(["upper", "lower", "as-typed"]).default("upper"),
+      color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+    })
+    .optional(),
+  /**
+   * Beat of the big moment (a person's track is started so its drop lands here) and a tempo for skeletons
+   * without a grid. Whole or half beats: the person's beats fall where the template's own track has its
+   * beats, which for a skeleton cut on the off-beat (hype-energy) is the half beat.
+   */
+  timing: z.object({ dropBeat: z.number().min(0).multipleOf(0.5).optional(), nominalBpm: z.number().min(40).max(240).optional() }).optional(),
+  /** Bundled example render (relative to the preset folder) and its credit line. */
+  example: z.object({ video: VIDEO_FILE.optional(), poster: IMAGE_FILE, credit: z.string().max(240), models: z.array(z.string()).default([]) }).optional(),
+  /** Bundled track the skeleton is timed to. */
+  soundtrack: z
+    .object({
+      file: AUDIO_FILE,
+      title: z.string().max(60),
+      artist: z.string().max(60).optional(),
+      licence: z.string().max(120),
+      bpm: z.number().positive().optional(),
+      dropSec: z.number().min(0).optional(),
+    })
+    .optional(),
+  /** Precomputed cut map (cutmap.json) of the example. */
+  cutmap: JSON_FILE.optional(),
+  brief: z.array(BriefFieldSchema).max(16).default([]),
+  origin: z.object({ kind: z.enum(["built-in", "decoded"]), project: z.string().optional(), createdAt: z.string() }).optional(),
 });
 export type Preset = z.infer<typeof PresetSchema>;
 
@@ -96,6 +164,13 @@ async function readDir(dir: string, source: PresetEntry["source"]): Promise<Pres
   return out;
 }
 
+/** A preset's bundled soundtrack on disk, or undefined when it ships none (or the file is missing). */
+export function soundtrackPath(p: Pick<PresetEntry, "dir" | "soundtrack">): string | undefined {
+  if (!p.soundtrack || !EXTRA_NAME.test(p.soundtrack.file)) return undefined;
+  const file = join(p.dir, p.soundtrack.file);
+  return existsSync(file) ? file : undefined;
+}
+
 /** User presets shadow built-in ones with the same slug. */
 export async function listPresets(filter: { query?: string; category?: string } = {}): Promise<PresetEntry[]> {
   const user = await readDir(userPresetsDir(), "user");
@@ -115,13 +190,23 @@ export async function getPreset(slug: string): Promise<PresetEntry> {
   return found;
 }
 
+/** Names a preset folder may hold besides preset.json: plain file names, no folders. */
+const EXTRA_NAME = /^[A-Za-z0-9][A-Za-z0-9_-]*(?:\.[A-Za-z0-9]+)+$/;
+
 /**
  * Saves a preset to the user library. A bundled reference must be 3–30 s (the community-preset rule),
- * and up to 40 example images may accompany it.
+ * and up to 40 example images may accompany it. `extra` copies more files into the preset folder
+ * (published name → source path), such as the example, poster, cut map and soundtrack the preset names.
  */
-export async function savePreset(preset: Preset, files: { reference?: string; images?: string[] }): Promise<PresetEntry> {
+export async function savePreset(preset: Preset, files: { reference?: string; images?: string[]; extra?: Record<string, string> }): Promise<PresetEntry> {
+  const extra = Object.entries(files.extra ?? {});
+  for (const [name, source] of extra) {
+    if (!EXTRA_NAME.test(name) || name === "preset.json") throw new Error(`"${name}" can't be a preset file name: use a plain name such as example.mp4`);
+    if (!existsSync(source)) throw new Error(`File not found: ${source}`);
+  }
   const dir = join(userPresetsDir(), preset.slug);
   await mkdir(dir, { recursive: true });
+  for (const [name, source] of extra) await copyFile(source, join(dir, name));
   const p: Preset = { ...preset };
   if (files.reference) {
     const info = await probe(files.reference);

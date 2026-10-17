@@ -5,6 +5,44 @@
   "category": "style_transfer",
   "format": { "aspect": "9:16", "durationSec": 10, "fps": 30 },
   "inputs": { "images": { "min": 1, "max": 3, "title": "Your character (sharp, front-facing face)" }, "music": "optional", "instructionsMaxChars": 2000 },
+  "display": { "font": "Anton", "weight": 400, "italic": false, "case": "upper", "color": "#E10600" },
+  "soundtrack": {
+    "file": "soundtrack.m4a",
+    "title": "Cold Stare theme",
+    "artist": "open-katana",
+    "licence": "MIT (original, generated with ACE-Step 1.5 XL)",
+    "bpm": 130,
+    "dropSec": 3.5
+  },
+  "example": {
+    "video": "example.mp4",
+    "poster": "poster.jpg",
+    "credit": "Example made with open-katana: a fictional person (generated with Z-Image Turbo) on an original ACE-Step 1.5 XL track.",
+    "models": ["qwen21-edit", "wan22-14b-i2v"]
+  },
+  "cutmap": "cutmap.json",
+  "brief": [
+    {
+      "id": "words",
+      "label": "Words, one per beat",
+      "help": "Huge, filling the frame width.",
+      "kind": "words",
+      "verbatim": true,
+      "count": 4,
+      "default": ["LOCKED", "IN"],
+      "maxChars": 10,
+      "suggestions": [["NO", "NOISE"], ["STAY", "COLD"], ["FOCUS"]]
+    },
+    {
+      "id": "red",
+      "label": "The one red thing",
+      "kind": "text",
+      "default": "the last word",
+      "maxChars": 40,
+      "prompt": "Accent: {value} is the only red in the edit.",
+      "suggestions": ["a red tie", "a red light", "red eyes"]
+    }
+  ],
   "recipe": {
     "look": "bw-contrast with a red accent on titles only, heavy grain, deep vignette",
     "fonts": ["Anton", "Bebas Neue"],

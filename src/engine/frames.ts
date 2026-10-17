@@ -13,6 +13,8 @@ export interface FrameFeatures {
   saturation: Float32Array;
   /** Normalized color histogram per frame (HIST_BINS³ bins of RGB). */
   hist: Float32Array[];
+  /** Mean colour per frame: R, G, B (0–255) for frame i at 3i, 3i+1, 3i+2. */
+  meanRgb: Float32Array;
 }
 
 export const HIST_BINS = 4;
@@ -23,12 +25,16 @@ export function analysisSize(displayWidth: number, displayHeight: number, maxSid
   return { width: even(displayWidth), height: even(displayHeight) };
 }
 
-/** Decodes every native frame (no frame-rate conversion) at a small size and computes features. */
+/**
+ * Decodes every native frame (no frame-rate conversion) at a small size and computes features.
+ * `onFrame` is called with the number of frames read so far, after each frame.
+ */
 export async function extractFeatures(
   path: string,
   displayWidth: number,
   displayHeight: number,
   maxSide = 128,
+  opts: { onFrame?: (n: number) => void } = {},
 ): Promise<FrameFeatures> {
   const { width, height } = analysisSize(displayWidth, displayHeight, maxSide);
   const pixels = width * height;
@@ -36,6 +42,7 @@ export async function extractFeatures(
   const hist: Float32Array[] = [];
   const luma: number[] = [];
   const saturation: number[] = [];
+  const meanRgb: number[] = [];
   const binScale = HIST_BINS / 256;
 
   await streamRecords(
@@ -55,10 +62,16 @@ export async function extractFeatures(
       const h = new Float32Array(HIST_BINS ** 3);
       let lumaSum = 0;
       let satSum = 0;
+      let rSum = 0;
+      let gSum = 0;
+      let bSum = 0;
       for (let p = 0, o = 0; p < pixels; p++, o += 3) {
         const r = rgb[o]!;
         const gr = rgb[o + 1]!;
         const b = rgb[o + 2]!;
+        rSum += r;
+        gSum += gr;
+        bSum += b;
         const y = (77 * r + 150 * gr + 29 * b) >> 8;
         g[p] = y;
         lumaSum += y;
@@ -73,6 +86,8 @@ export async function extractFeatures(
       hist.push(h);
       luma.push(lumaSum / pixels / 255);
       saturation.push(satSum / pixels);
+      meanRgb.push(rSum / pixels, gSum / pixels, bSum / pixels);
+      opts.onFrame?.(gray.length);
     },
   );
 
@@ -84,6 +99,7 @@ export async function extractFeatures(
     hist,
     luma: Float32Array.from(luma),
     saturation: Float32Array.from(saturation),
+    meanRgb: Float32Array.from(meanRgb),
   };
 }
 

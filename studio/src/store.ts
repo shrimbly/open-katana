@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { api, type Edl, type ProjectState } from "./api.js";
+import { api, type Edl, HttpError, type ProjectState } from "./api.js";
 import { gridBeats } from "./time.js";
 
 export interface Selection {
@@ -16,6 +16,9 @@ export interface RenderStatus {
 }
 
 export type SaveState = "saved" | "pending" | "saving" | "error";
+
+/** Run statuses that hold the project lock: the director owns the edit and the editor is read-only (D26). */
+const HOLDS_LOCK = new Set(["queued", "starting", "running", "stopping", "paused"]);
 
 /** Overlay text is drawn live in the viewer; everything else (including text behind the subject) is in the picture. */
 const pictureKey = (edl: Edl) => JSON.stringify({ ...edl, text: edl.text.filter((t) => t.behind), flashes: edl.flashes.filter((f) => !f.overText) });
@@ -38,6 +41,14 @@ export function useEditor(projectId: string) {
   const lastServer = useRef("");
   const lastPicture = useRef("");
   const onRendered = useRef<((mode: string) => void) | null>(null);
+  // While an app run holds the project nothing here writes: no edits, autosave or renders.
+  const [locked, setLockedState] = useState(false);
+  const lockedRef = useRef(false);
+  const [fromApp, setFromApp] = useState(false);
+  const setLocked = (v: boolean) => {
+    lockedRef.current = v;
+    setLockedState(v);
+  };
 
   const setSaving = (s: SaveState) => {
     savingRef.current = s;
@@ -67,8 +78,23 @@ export function useEditor(projectId: string) {
 
   useEffect(() => {
     reload(true).catch((e: Error) => setError(e.message));
+    // Projects the app made know their run; an older server or a chat project answers without one.
+    api.appInfo(projectId).then(
+      (info) => {
+        setLocked(info.locked);
+        setFromApp(info.card.origin !== "chat");
+      },
+      () => undefined,
+    );
     return api.events(projectId, (e) => {
-      if (e.type === "edl") {
+      if (e.type === "run") {
+        const status = String((e.state as { status?: unknown } | undefined)?.status ?? "");
+        const was = lockedRef.current;
+        setLocked(HOLDS_LOCK.has(status));
+        setFromApp(true);
+        // The director has finished with the edit: pick up its last cut.
+        if (was && !HOLDS_LOCK.has(status)) reload(true).catch(() => undefined);
+      } else if (e.type === "edl") {
         // Saves from elsewhere (the agent) replace the working copy unless an edit here is still unsaved.
         if (savingRef.current === "saved") reload(true).catch(() => undefined);
       } else if (e.type === "render") {
@@ -87,6 +113,7 @@ export function useEditor(projectId: string) {
   const persist = useCallback(
     (next: Edl) => {
       window.clearTimeout(saveTimer.current);
+      if (lockedRef.current) return;
       setSaving("pending");
       saveTimer.current = window.setTimeout(async () => {
         const text = JSON.stringify(next);
@@ -106,6 +133,14 @@ export function useEditor(projectId: string) {
             await api.render(projectId, "notext");
           }
         } catch (e) {
+          if (e instanceof HttpError && e.code === "RUN_ACTIVE") {
+            // A run took the project after this page loaded: drop the change and follow the director.
+            setLocked(true);
+            setSaving("saved");
+            setError(undefined);
+            reload(true).catch(() => undefined);
+            return;
+          }
           setSaving("error");
           setError((e as Error).message);
         }
@@ -120,6 +155,7 @@ export function useEditor(projectId: string) {
    */
   const apply = useCallback(
     (fn: (draft: Edl) => void, key?: string) => {
+      if (lockedRef.current) return;
       setEdl((current) => {
         if (!current) return current;
         const draft = structuredClone(current);
@@ -141,6 +177,7 @@ export function useEditor(projectId: string) {
   );
 
   const undo = useCallback(() => {
+    if (lockedRef.current) return;
     setEdl((current) => {
       const prev = past.current.pop();
       if (!prev || !current) return current;
@@ -153,6 +190,7 @@ export function useEditor(projectId: string) {
   }, [persist]);
 
   const redo = useCallback(() => {
+    if (lockedRef.current) return;
     setEdl((current) => {
       const next = future.current.pop();
       if (!next || !current) return current;
@@ -171,13 +209,14 @@ export function useEditor(projectId: string) {
 
   const requestRender = useCallback(
     (mode: "notext" | "preview" | "master") => {
+      if (lockedRef.current) return Promise.resolve();
       setRender((r) => ({ ...r, running: true, mode, error: undefined }));
       return api.render(projectId, mode).catch((e: Error) => setError(e.message));
     },
     [projectId],
   );
 
-  return { projectId, state, edl, beats, selection, setSelection, apply, undo, redo, saving, warnings, error, setError, render, requestRender, reload, history, onRendered };
+  return { projectId, state, edl, beats, selection, setSelection, apply, undo, redo, saving, warnings, error, setError, render, requestRender, reload, history, onRendered, locked, fromApp };
 }
 
 export type Editor = ReturnType<typeof useEditor>;

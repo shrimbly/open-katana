@@ -1,13 +1,22 @@
-import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
-import { chooseProfile, estimateSpec, JOB_OVERHEAD_SEC, type JobSpec, JobSpecSchema, loadJobs, submitJobs, waitJobs } from "../comfy/jobs.js";
+import { OUT_OF_CREDITS } from "../comfy/backend.js";
+import {
+  adjustedSeconds,
+  cancelOpenJobs,
+  chooseProfile,
+  estimateSpecFor,
+  type JobSpec,
+  JobSpecSchema,
+  loadJobs,
+  submitJobs,
+  timingRatio,
+  waitJobsDetailed,
+} from "../comfy/jobs.js";
 import { licenseLabel, licenseWarnings, profile } from "../comfy/operations.js";
 import { extractFrame } from "../engine/sheets.js";
 import type { Workspace } from "../project/workspace.js";
-import { dataHome } from "../util/paths.js";
+import { approvalFromFile, backendError, isAppRun, isConnectionError, presetAspect, readApproval, refuseIfLocked, userPicks } from "./app-mode.js";
 import { type Content, image, result, safe, table } from "./content.js";
 import { identityPanel } from "./identity.js";
 import type { State } from "./state.js";
@@ -72,7 +81,10 @@ async function frameAsset(ws: Workspace, ref: string): Promise<string> {
   return id;
 }
 
-/** Resolves "@line" to that line's accepted output (or newest completed one) and "<video>@f<n>" to a frame; other ids pass through. */
+/**
+ * Resolves "@line" to the person's pick for that line (made in the app), else its accepted output (or
+ * newest completed one), and "<video>@f<n>" to a frame; other ids pass through.
+ */
 async function resolveRef(ws: Workspace, ref: string): Promise<string> {
   if (FRAME_REF.test(ref) && !ws.project.assets.some((a) => a.id === ref)) return frameAsset(ws, ref);
   if (!ref.startsWith("@")) {
@@ -80,6 +92,8 @@ async function resolveRef(ws: Workspace, ref: string): Promise<string> {
     return ref;
   }
   const line = ref.slice(1);
+  const picked = (await userPicks(ws)).get(line);
+  if (picked && ws.project.assets.some((a) => a.id === picked)) return picked;
   const jobs = (await loadJobs(ws)).filter((j) => j.line === line && j.state === "completed" && j.outputs.length);
   if (!jobs.length) throw new Error(`Line ${line} has no finished output yet; generate and judge it before jobs that use ${ref}.`);
   const vs = await verdicts(ws);
@@ -91,21 +105,36 @@ async function resolveRef(ws: Workspace, ref: string): Promise<string> {
   return pick;
 }
 
+/** The aspect a spec without one is made at: the reference's, else the template's format (spec D44), else 9:16. */
+async function defaultAspect(ws: Workspace): Promise<number> {
+  const ref = ws.reference();
+  if (ref?.width && ref.height) return ref.width / ref.height;
+  return (ref ? undefined : await presetAspect(ws)) ?? 9 / 16;
+}
+
 async function resolveSpec(ws: Workspace, spec: JobSpec): Promise<JobSpec> {
+  const presetDefault = ws.reference() ? undefined : await presetAspect(ws);
   return {
     ...spec,
+    ...(spec.aspect === undefined && presetDefault ? { aspect: presetDefault } : {}),
     images: spec.images ? await Promise.all(spec.images.map((r) => resolveRef(ws, r))) : undefined,
     start: spec.start ? await resolveRef(ws, spec.start) : undefined,
     end: spec.end ? await resolveRef(ws, spec.end) : undefined,
   };
 }
 
-async function timingRatio(target: string, profileId: string): Promise<number> {
-  const file = join(dataHome(), "timings.json");
-  if (!existsSync(file)) return 1;
-  const data = JSON.parse(await readFile(file, "utf8")) as Record<string, { n: number; ratio: number }>;
-  return data[`${target}|${profileId}`]?.ratio ?? 1;
+/** GPU seconds already committed in a project: every job not in error or cancelled, as the budget counts them. */
+async function committedSeconds(ws: Workspace, kind: string): Promise<number> {
+  let total = 0;
+  for (const j of await loadJobs(ws)) {
+    if (j.state === "error" || j.state === "cancelled") continue;
+    total += adjustedSeconds(j.estimateSec, 1, { ratio: await timingRatio(j.backend, j.profile), kind });
+  }
+  return total;
 }
+
+/** 45 → "45", 45.25 → "45.3". */
+const minutes = (m: number) => String(+m.toFixed(1));
 
 export function registerGenerationTools(server: McpServer, state: State): void {
   server.registerTool(
@@ -119,8 +148,13 @@ export function registerGenerationTools(server: McpServer, state: State): void {
     },
     safe(async ({ project, plan }) => {
       const ws = await state.workspace(project);
+      refuseIfLocked(ws);
       const cfg = await state.config();
       const backend = await state.backend();
+      // Without a reference, lines are made at the template's aspect (spec D44).
+      const presetDefault = ws.reference() ? undefined : await presetAspect(ws);
+      if (presetDefault) for (const j of plan.jobs) j.aspect ??= presetDefault;
+      const aspect = await defaultAspect(ws);
       const lines = new Set(plan.jobs.map((j) => j.line));
       const problems: string[] = [];
       for (const j of plan.jobs) {
@@ -140,9 +174,8 @@ export function registerGenerationTools(server: McpServer, state: State): void {
       let total = 0;
       for (const j of plan.jobs) {
         const profileId = chooseProfile(j, { tier: cfg.tier, overrides: cfg.profiles, commercial: cfg.commercial });
-        const est = estimateSpec(ws, j, profileId);
-        const overhead = (JOB_OVERHEAD_SEC[backend.kind] ?? 0) * j.takes;
-        const seconds = Math.round(est.seconds * (await timingRatio(backend.target, profileId)) + overhead);
+        const est = estimateSpecFor(j, profileId, aspect);
+        const seconds = adjustedSeconds(est.seconds, j.takes, { ratio: await timingRatio(backend.target, profileId), kind: backend.kind });
         total += seconds;
         const prof = profile(profileId);
         const video = prof.fps && j.durationSec ? `${j.durationSec} s` : "";
@@ -152,10 +185,14 @@ export function registerGenerationTools(server: McpServer, state: State): void {
       }
       await ws.writeJson("plan/plan.json", plan);
       const warnings = licenseWarnings(jobs.map((j) => j.profile), cfg.commercial);
+      // In app runs the cap is the person's approval (the one katana_generate enforces), not the config budget.
+      const appRun = approvalFromFile();
+      const approved = appRun ? await readApproval(ws) : undefined;
+      const budgetMinutes = appRun ? approved?.gpuMinutes : cfg.budgetMinutes;
       const estimate = {
         project: ws.project.id,
         totalMinutes: +(total / 60).toFixed(1),
-        budgetMinutes: cfg.budgetMinutes,
+        ...(budgetMinutes !== undefined ? { budgetMinutes } : {}),
         backend: backend.target,
         commercial: Boolean(cfg.commercial),
         jobs,
@@ -171,7 +208,7 @@ export function registerGenerationTools(server: McpServer, state: State): void {
           "",
           rows.length ? table(["Line", "Operation", "Profile", "Licence", "Takes", "Video", "Size", "Est. GPU min"], rows) : "No generation needed: the edit uses footage, stills and graphics only.",
           "",
-          `Estimated total: ${estimate.totalMinutes} GPU minutes on ${backend.target} (project budget ${cfg.budgetMinutes} min). ${note}`,
+          `Estimated total: ${estimate.totalMinutes} GPU minutes on ${backend.target} (${appRun ? (approved ? `the person approved ${minutes(approved.gpuMinutes)} GPU min in total` : "the person approves the spend in the app") : `project budget ${cfg.budgetMinutes} min`}). ${note}`,
           ...(warnings.length
             ? [
                 "",
@@ -181,7 +218,11 @@ export function registerGenerationTools(server: McpServer, state: State): void {
                 "",
               ]
             : []),
-          "Show this to the user and ask for approval before katana_generate.",
+          appRun
+            ? approved
+              ? "Generate within that approval with katana_generate."
+              : "The person approves the spend in the app: stop here and summarise the plan."
+            : "Show this to the user and ask for approval before katana_generate.",
         ].join("\n"),
         estimate,
       );
@@ -204,6 +245,10 @@ export function registerGenerationTools(server: McpServer, state: State): void {
     },
     safe(async (a) => {
       const ws = await state.workspace(a.project);
+      refuseIfLocked(ws);
+      // In app runs the person approves in the app: the approval file is the only permission to spend.
+      const approval = approvalFromFile() ? await readApproval(ws) : undefined;
+      if (approvalFromFile() && !approval) throw new Error("[APPROVAL] The person approves spending in the app. Stop now and summarise the plan in two lines.");
       if (!a.approved) throw new Error("Show the estimate from katana_plan and get the user's approval first.");
       const pages = (await ws.readJson<unknown[]>("analysis/pages.json")) ?? [];
       if (ws.reference() && ws.project.mode !== "clip") {
@@ -222,15 +267,31 @@ export function registerGenerationTools(server: McpServer, state: State): void {
       if (!specs.length) throw new Error("Nothing to generate: give lines or jobs.");
       const cfg = await state.config();
       const backend = await state.backend();
-      const cap = (a.budgetMinutes ?? cfg.budgetMinutes) * 60;
-      const prior = (await loadJobs(ws)).filter((j) => j.state !== "error" && j.state !== "cancelled").reduce((s, j) => s + j.estimateSec, 0);
+      // The agent may lower the cap (budgetMinutes), never raise it past the person's approval.
+      const capMinutes = approval ? Math.min(a.budgetMinutes ?? Infinity, approval.gpuMinutes) : (a.budgetMinutes ?? cfg.budgetMinutes);
+      const cap = capMinutes * 60;
+      const prior = await committedSeconds(ws, backend.kind);
+      const aspect = await defaultAspect(ws);
       let planned = 0;
-      for (const s of specs) planned += estimateSpec(ws, s, chooseProfile(s, { tier: cfg.tier, overrides: cfg.profiles, commercial: cfg.commercial })).seconds;
+      for (const s of specs) {
+        const profileId = chooseProfile(s, { tier: cfg.tier, overrides: cfg.profiles, commercial: cfg.commercial });
+        planned += adjustedSeconds(estimateSpecFor(s, profileId, aspect).seconds, s.takes, { ratio: await timingRatio(backend.target, profileId), kind: backend.kind });
+      }
       if (prior + planned > cap) {
-        throw new Error(`This would bring the project to ~${((prior + planned) / 60).toFixed(1)} GPU minutes, over the approved ${(cap / 60).toFixed(1)}. Ask the user for a larger budget or trim the lines.`);
+        const needs = (prior + planned) / 60;
+        if (approval) {
+          throw new Error(`[BUDGET] needs=${needs.toFixed(1)} cap=${minutes(capMinutes)} This needs about ${Math.round(needs)} GPU minutes in total; the person approved ${minutes(capMinutes)}. Stop now.`);
+        }
+        throw new Error(`This would bring the project to ~${needs.toFixed(1)} GPU minutes, over the approved ${(cap / 60).toFixed(1)}. Ask the user for a larger budget or trim the lines.`);
       }
       const resolved = await Promise.all(specs.map((s) => resolveSpec(ws, s)));
-      const { submitted, warnings } = await submitJobs(ws, backend, resolved, { tier: cfg.tier, overrides: cfg.profiles, commercial: cfg.commercial });
+      let submittedJobs: Awaited<ReturnType<typeof submitJobs>>;
+      try {
+        submittedJobs = await submitJobs(ws, backend, resolved, { tier: cfg.tier, overrides: cfg.profiles, commercial: cfg.commercial });
+      } catch (e) {
+        throw isAppRun() ? backendError(e, backend.target) : e;
+      }
+      const { submitted, warnings } = submittedJobs;
       await ws.setStage("generating");
       return result(
         [
@@ -251,11 +312,19 @@ export function registerGenerationTools(server: McpServer, state: State): void {
         "Waits for submitted jobs (all unfinished ones by default) up to timeoutSec, downloads finished outputs into the project and returns them for review: stills as images, clips as frame sheets. Call again while jobs are still running.",
       inputSchema: z.object({ project: z.string(), jobs: z.array(z.string()).optional(), timeoutSec: z.number().int().min(0).max(600).default(240) }),
     },
-    safe(async (a) => {
+    safe(async (a, req) => {
       const ws = await state.workspace(a.project);
+      refuseIfLocked(ws);
       const backend = await state.backend();
       const before = new Map((await loadJobs(ws)).map((j) => [j.id, j.state]));
-      const jobs = await waitJobs(ws, backend, { ids: a.jobs, timeoutSec: a.timeoutSec });
+      // A wait the client gave up on (Esc) stops polling instead of running on to its timeout.
+      const { jobs, lastPass } = await waitJobsDetailed(ws, backend, { ids: a.jobs, timeoutSec: a.timeoutSec, signal: req?.mcpReq?.signal });
+      if (isAppRun()) {
+        if (jobs.some((j) => j.state === "error" && before.get(j.id) !== "error" && j.error?.includes(OUT_OF_CREDITS))) throw new Error(`[OUT_OF_CREDITS] ${OUT_OF_CREDITS}`);
+        if (lastPass.polled && lastPass.failures.length === lastPass.polled && lastPass.failures.every((m) => isConnectionError({ message: m }))) {
+          throw new Error(`[BACKEND] ${backend.target}: not answering`);
+        }
+      }
       const fresh = jobs.filter((j) => j.state === "completed" && before.get(j.id) !== "completed");
       const images: Content[] = [];
       const shown: string[] = [];
@@ -309,11 +378,43 @@ export function registerGenerationTools(server: McpServer, state: State): void {
     },
     safe(async (a) => {
       const ws = await state.workspace(a.project);
-      ws.asset(a.asset);
+      refuseIfLocked(ws);
+      const asset = ws.asset(a.asset);
+      // The person's pick for a line (made in the app) is final.
+      const line = asset.lineId;
+      const pick = line ? (await userPicks(ws)).get(line) : undefined;
+      if (pick && ((a.verdict === "accept" && a.asset !== pick) || (a.verdict === "reject" && a.asset === pick))) {
+        throw new Error(`[USER_PICK] The person picked ${pick} for line ${line} in the app; keep it.`);
+      }
       const list = (await verdicts(ws)).filter((v) => v.asset !== a.asset);
       list.push({ asset: a.asset, verdict: a.verdict, reason: a.reason, badRanges: a.badRanges, at: new Date().toISOString() });
       await ws.writeJson("qa/verdicts.json", list);
       return result(`${a.asset}: ${a.verdict}${a.reason ? ` (${a.reason})` : ""}.`, { verdict: a.verdict });
+    }),
+  );
+
+  server.registerTool(
+    "katana_cancel",
+    {
+      title: "Cancel generation jobs",
+      description:
+        "Cancels the project's queued and running generation jobs on the current ComfyUI backend, so they stop using GPU time. Finished outputs are kept; jobs sent to another backend are left alone. Call katana_generate again to resume.",
+      inputSchema: z.object({ project: z.string() }),
+    },
+    safe(async ({ project }) => {
+      const ws = await state.workspace(project);
+      refuseIfLocked(ws);
+      const backend = await state.backend();
+      const r = await cancelOpenJobs(ws, backend);
+      return result(
+        [
+          `Cancelled ${r.cancelled} job(s) on ${backend.target}.`,
+          r.failed.length ? `${r.failed.length} couldn't be cancelled and may still use GPU time: ${r.failed.map((f) => `${f.id} (${f.error})`).join(", ")}.` : "",
+          r.unsent ? `${r.unsent} job(s) were being sent when the session stopped and may still use GPU time.` : "",
+          r.otherTarget ? `${r.otherTarget} job(s) on another backend were left alone.` : "",
+        ].filter(Boolean).join(" "),
+        r,
+      );
     }),
   );
 }

@@ -1,25 +1,16 @@
 import { createHash } from "node:crypto";
-
-/** Review pages are stored with hashed check codes, so the codes can only be read off the images. */
-interface StoredPage {
-  page: number;
-  startFrame: number;
-  endFrame: number;
-  path: string;
-  codeHash: string;
-}
-
-const hashCode = (project: string, code: string) => createHash("sha256").update(`${project}:${code.toUpperCase()}`).digest("hex");
 import { existsSync, statSync } from "node:fs";
 import { appendFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
-import { type Breakdown, analyzeReference } from "../engine/analyze.js";
+import type { Breakdown } from "../engine/analyze.js";
 import type { AudioAnalysis } from "../engine/audio.js";
 import type { EnergyMap } from "../engine/energy.js";
-import { everyFramePages, frameSheet, type SheetPage, sampleSheet } from "../engine/sheets.js";
+import { everyFramePages, frameSheet, sampleSheet } from "../engine/sheets.js";
+import { analyzeProject, hashCode, type StoredPage } from "../project/analysis.js";
 import type { Workspace } from "../project/workspace.js";
+import { refuseIfLocked } from "./app-mode.js";
 import { type Content, image, result, safe, table } from "./content.js";
 import type { State } from "./state.js";
 
@@ -52,18 +43,11 @@ export function registerAnalysisTools(server: McpServer, state: State): void {
     },
     safe(async ({ project, force }) => {
       const ws = await state.workspace(project);
-      const ref = ws.reference();
-      if (!ref) throw new Error("This project has no reference video. Import one with katana_import (role reference) or plan from the preset recipe.");
-      let breakdown = await ws.readJson<Breakdown>("analysis/breakdown.json");
-      let pages = await ws.readJson<StoredPage[]>("analysis/pages.json");
-      if (force || !breakdown || !pages) {
-        const r = await analyzeReference(ws.path(ref.path), ws.path("analysis"), { seed: ws.project.id });
-        breakdown = r.breakdown;
-        pages = r.pages.map(({ code, ...p }: SheetPage) => ({ ...p, codeHash: hashCode(ws.project.id, code) }));
-        await ws.writeJson("analysis/pages.json", pages);
-        ws.project.reviewedPages = {};
-        await ws.setStage("analyzed");
-      }
+      if (force) refuseIfLocked(ws);
+      // The app's decode runs the same analysis first, so in app runs this only reads it back.
+      await analyzeProject(ws, { force });
+      const breakdown = (await ws.readJson<Breakdown>("analysis/breakdown.json"))!;
+      const pages = (await ws.readJson<StoredPage[]>("analysis/pages.json"))!;
       const energy = (await ws.readJson<EnergyMap>("analysis/energy.json"))!;
       const audio = await ws.readJson<AudioAnalysis>("analysis/audio.json");
       const f = breakdown.format;
@@ -215,6 +199,7 @@ export function registerAnalysisTools(server: McpServer, state: State): void {
     },
     safe(async (a) => {
       const ws = await state.workspace(a.project);
+      refuseIfLocked(ws);
       const pages = (await ws.readJson<StoredPage[]>("analysis/pages.json")) ?? [];
       if (!pages.length) throw new Error("Run katana_analyze first.");
       const wrong: number[] = [];

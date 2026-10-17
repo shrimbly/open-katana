@@ -48,7 +48,7 @@ describe("MCP server: the free path from reference to delivery", () => {
   it("lists the katana tools", async () => {
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name);
-    for (const n of ["katana_guide", "katana_presets", "katana_start", "katana_analyze", "katana_view", "katana_review", "katana_plan", "katana_generate", "katana_wait", "katana_judge", "katana_edit", "katana_render", "katana_deliver", "katana_backend", "katana_status"]) {
+    for (const n of ["katana_guide", "katana_presets", "katana_start", "katana_analyze", "katana_view", "katana_review", "katana_plan", "katana_generate", "katana_wait", "katana_judge", "katana_edit", "katana_render", "katana_deliver", "katana_backend", "katana_status", "katana_cancel"]) {
       expect(names).toContain(n);
     }
   });
@@ -138,5 +138,47 @@ describe("MCP server: the free path from reference to delivery", () => {
     expect(edit.isError).toBeFalsy();
     expect(textOf(edit)).toContain("Built from the preset skeleton");
     expect(textOf(edit)).not.toContain('"slot:');
+  }, 120_000);
+
+  const slotsOf = async (slug: string) => {
+    const { readFile } = await import("node:fs/promises");
+    const preset = JSON.parse(await readFile(join(process.cwd(), `presets/${slug}/preset.json`), "utf8")) as { slots: { id: string }[] };
+    return Object.fromEntries(preset.slots.map((sl) => [sl.id, "s1"]));
+  };
+  const savedEdl = async (id: string) => JSON.parse(readFileSync(join(home, "projects", id, "render", "edl.json"), "utf8")) as { audio?: { asset: string; offset: number }; grid?: { bpm: number; phase: number }; canvas: { durationSec?: number } };
+
+  it("a preset without a reference or music uses its own track, so the skeleton's edit has sound", async () => {
+    const r = await call("katana_start", { subjects: [photo], preset: "hype-energy", title: "own track" });
+    expect(r.isError).toBeFalsy();
+    expect(textOf(r)).toContain("is imported as asset music");
+    const assets = r.structuredContent!.assets as { id: string; role: string }[];
+    expect(assets.find((x) => x.id === "music")).toMatchObject({ role: "audio" });
+    const id = r.structuredContent!.project as string;
+    const edit = await call("katana_edit", { project: id, fromPreset: { slots: await slotsOf("hype-energy") } });
+    expect(edit.isError, textOf(edit)).toBeFalsy();
+    const edl = await savedEdl(id);
+    expect(edl.audio).toMatchObject({ asset: "music", offset: 0 });
+    // The template's own track keeps the skeleton's grid.
+    expect(edl.grid).toEqual({ bpm: 144, phase: 0.5 });
+    // Audio "ref" in a project without a reference is refused at once, not at render.
+    const bad = await call("katana_edit", { project: id, edl: { canvas: { width: 1080, height: 1920, fps: 30 }, audio: { asset: "ref" }, shots: [{ start: 0, end: 1, source: { asset: "black" } }] } });
+    expect(bad.isError).toBe(true);
+    expect(textOf(bad)).toContain('no reference video, so audio "ref" has no sound');
+  }, 120_000);
+
+  it("a skeleton played on the user's own music is retimed to its beat", async () => {
+    const media = await tempDir("ok-music-");
+    const track = join(media, "ninety.wav");
+    await run("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "sine=frequency=1000:duration=30", "-af", "volume='if(lt(mod(t,0.6666667),0.03),1,0)':eval=frame", track]);
+    const r = await call("katana_start", { subjects: [photo], preset: "night-stare", music: track, title: "my track" });
+    expect(textOf(r)).not.toContain("is imported as asset music");
+    const id = r.structuredContent!.project as string;
+    const edit = await call("katana_edit", { project: id, fromPreset: { slots: await slotsOf("night-stare") } });
+    expect(edit.isError, textOf(edit)).toBeFalsy();
+    expect(textOf(edit)).toContain("Retimed to the music");
+    const edl = await savedEdl(id);
+    expect(edl.audio?.asset).toBe("music");
+    expect(edl.grid!.bpm).toBeGreaterThan(88);
+    expect(edl.grid!.bpm).toBeLessThan(92);
   }, 120_000);
 });

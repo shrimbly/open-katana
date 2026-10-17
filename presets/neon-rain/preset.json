@@ -5,6 +5,54 @@
   "category": "personalized_edits",
   "format": { "aspect": "9:16", "durationSec": 15, "fps": 30 },
   "inputs": { "images": { "min": 1, "max": 5, "title": "Your character (first image: clear face)" }, "music": "optional", "instructionsMaxChars": 2000 },
+  "display": { "font": "UnifrakturMaguntia", "weight": 400, "italic": false, "case": "as-typed", "color": "#2DE1C2" },
+  "soundtrack": {
+    "file": "soundtrack.m4a",
+    "title": "Neon Rain theme",
+    "artist": "open-katana",
+    "licence": "MIT (original, generated with ACE-Step 1.5 XL)",
+    "bpm": 166.8,
+    "dropSec": 4.04
+  },
+  "example": {
+    "video": "example.mp4",
+    "poster": "poster.jpg",
+    "credit": "Example made with open-katana: a fictional person (generated with Z-Image Turbo) on an original ACE-Step 1.5 XL track.",
+    "models": ["qwen21-edit", "wan22-14b-i2v"]
+  },
+  "cutmap": "cutmap.json",
+  "brief": [
+    {
+      "id": "title",
+      "label": "Your title word",
+      "help": "Set in blackletter, slammed on the drop.",
+      "kind": "text",
+      "verbatim": true,
+      "default": "AURA",
+      "maxChars": 12,
+      "suggestions": ["UNTOUCHABLE", "NOCTURNE", "RARE"]
+    },
+    {
+      "id": "city",
+      "label": "Your city at night",
+      "kind": "text",
+      "default": "a rain-wet alley",
+      "maxChars": 60,
+      "prompt": "Place: {value} at night, rain-wet, teal neon reflections.",
+      "suggestions": ["a subway platform", "a bus stop in the rain", "an empty car park", "a neon underpass"]
+    },
+    {
+      "id": "captions",
+      "label": "Captions (optional)",
+      "help": "One or two words each.",
+      "kind": "words",
+      "verbatim": true,
+      "count": 3,
+      "maxChars": 14,
+      "collapsed": true,
+      "suggestions": []
+    }
+  ],
   "recipe": {
     "look": "teal-night grade, crushed blacks, light film grain, soft glow on highlights, subtle vignette",
     "fonts": ["UnifrakturMaguntia", "Anton"],

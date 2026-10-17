@@ -8,6 +8,10 @@ import { timecode, toSec } from "./time.js";
 
 export type ViewMode = "live" | "preview" | "master";
 
+/** The selection colour from tokens.css (canvas strokes can't use var()), read once. */
+let sodiumColor: string | undefined;
+const sodium = (el: Element) => (sodiumColor ||= getComputedStyle(el).getPropertyValue("--sodium").trim() || "#f2a33a");
+
 interface Props {
   editor: Editor;
   clock: Clock;
@@ -92,7 +96,7 @@ export function Viewer({ editor, clock, mode, setMode, lastEditAt }: Props) {
       if (selected && (visible || drag.current)) {
         const L = layout(g, ev, W, H);
         g.save();
-        g.strokeStyle = "#F2A33A";
+        g.strokeStyle = sodium(canvas);
         g.lineWidth = 1.5 / k;
         g.setLineDash(ev.behind ? [6 / k, 4 / k] : []);
         const pad = L.fs * 0.08;
@@ -115,7 +119,8 @@ export function Viewer({ editor, clock, mode, setMode, lastEditAt }: Props) {
     }
     if (guide) {
       g.save();
-      g.strokeStyle = "rgba(242,163,58,0.8)";
+      g.strokeStyle = sodium(canvas);
+      g.globalAlpha = 0.8;
       g.lineWidth = 1 / k;
       g.setLineDash([4 / k, 4 / k]);
       g.beginPath();

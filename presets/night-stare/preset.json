@@ -3,12 +3,64 @@
   "title": "Night Stare",
   "description": "Lone-wolf night aura edit (11 s, 4:3, 24 fps): a hooded figure training while the city sleeps, cold teal and sodium-green grade with black-and-white inserts, uncanny eye beats (x-ray flicker, red-eye strip, a white iris strobed open on the drop) and a closing red serif line, one word at a time.",
   "category": "personalized_edits",
-  "format": { "aspect": "4:3", "durationSec": 11, "fps": 24 },
+  "format": { "aspect": "4:3", "durationSec": 10.875, "fps": 24 },
   "inputs": {
     "images": { "min": 1, "max": 5, "title": "Your character (clear face first; a back or full-body photo helps)" },
     "music": "optional",
     "instructionsMaxChars": 2000
   },
+  "display": { "font": "Playfair Display", "weight": 700, "italic": false, "case": "upper", "color": "#EB0B0E" },
+  "timing": { "dropBeat": 12, "nominalBpm": 120 },
+  "soundtrack": {
+    "file": "soundtrack.m4a",
+    "title": "Night Stare theme",
+    "artist": "open-katana",
+    "licence": "MIT (original, generated with ACE-Step 1.5 XL)",
+    "bpm": 119.8,
+    "dropSec": 6.3
+  },
+  "example": {
+    "video": "example.mp4",
+    "poster": "poster.jpg",
+    "credit": "Example made with open-katana: a fictional person (generated with Z-Image Turbo) on an original ACE-Step 1.5 XL track.",
+    "models": ["qwen21-edit", "wan22-14b-flf", "wan22-14b-i2v", "z-image-turbo"]
+  },
+  "cutmap": "cutmap.json",
+  "brief": [
+    {
+      "id": "line",
+      "label": "Four short words, one per frame",
+      "help": "Up to 7 letters each, so each fits half the frame.",
+      "kind": "words",
+      "binds": [{ "index": 0 }, { "index": 1 }, { "index": 2 }, { "index": 3 }],
+      "default": ["BUILT", "IN", "THE", "DARK"],
+      "maxChars": 7,
+      "suggestions": [
+        ["WORK", "WHILE", "THEY", "SLEEP"],
+        ["NO", "ONE", "IS", "COMING"],
+        ["ALONE", "BY", "MY", "CHOICE"],
+        ["STAY", "HUNGRY", "STAY", "COLD"]
+      ]
+    },
+    {
+      "id": "train",
+      "label": "How you train",
+      "kind": "choice",
+      "options": ["Shadowboxing", "Running stairs", "Skipping rope", "Pull-ups"],
+      "allowOther": true,
+      "default": "Shadowboxing",
+      "prompt": "Training: {value} (the scope shot and the chase).",
+      "suggestions": []
+    },
+    {
+      "id": "hood",
+      "label": "Hood up",
+      "kind": "toggle",
+      "default": true,
+      "promptOn": "Wardrobe: hood up, as in the template.",
+      "promptOff": "Wardrobe: no hood; keep the outfit from the photos."
+    }
+  ],
   "recipe": {
     "look": "Cold night realism. Colour shots: teal-night (dim teal-green concrete, sodium yellow-green lamps, navy sky, crushed blacks), mild grain, soft bloom only on practical lights. Four shots go monochrome: the elevator and the escalator finale (bw-contrast), the running feet (bleach, almost no colour) and one true 1-bit threshold face. Effect inserts: a bones-on-black x-ray screened over the back with a cyan duotone wash, a cream tint and a difference-blend dissolve back to the skin; an inverted high-key freeze with a normal-tone eye strip and red irises; a white bloom with a light leak from the left and a warm-gold bloom. The eye extreme close-up keeps the subject's natural skin tone, warm (no look, slightly desaturated). Our looks: teal-night (base), bw-contrast, bleach, duotone, tint and difference/screen layers on the x-ray frames.",
     "fonts": ["Playfair Display"],
@@ -43,7 +95,8 @@
     { "id": "escalator", "kind": "clip", "description": "Black-and-white wide from behind: the hooded hero rides an escalator up toward a brightly lit glass-and-steel canopy.", "operation": "clip.r2v (minimax-h3-r2v)", "guidance": "Strong symmetric perspective, empty centre above the hero for the title words. 1 s, steady." }
   ],
   "skeleton": {
-    "canvas": { "width": 1440, "height": 1080, "fps": 24, "durationSec": 11 },
+    "canvas": { "width": 1440, "height": 1080, "fps": 24, "durationSec": 10.875 },
+    "grid": { "bpm": 119.78, "phase": 0.31 },
     "audio": { "asset": "ref", "offset": 0 },
     "finish": { "look": "none", "grain": 0.25, "vignette": 0.25, "letterbox": 0 },
     "shots": [

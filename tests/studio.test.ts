@@ -11,6 +11,8 @@ import { addText, applyStyleToAll, moveShotEdge, shotAt, splitShot, stackRows } 
 import { makeReferenceEdit, tempDir } from "./helpers/synth.js";
 
 const ctx = { fps: 24, beats: [0.5, 1, 1.5, 2, 2.5, 3] };
+/** Every request that changes something carries the intent header and is sent as JSON. */
+const INTENT = { "x-katana": "1", "content-type": "application/json" };
 
 const edl = (): Edl =>
   EdlSchema.parse({
@@ -113,7 +115,7 @@ describe("studio server", () => {
   });
 
   it("validates and saves edits", async () => {
-    const put = (body: unknown) => fetch(`${base}/api/projects/${ws.project.id}/edl`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const put = (body: unknown) => fetch(`${base}/api/projects/${ws.project.id}/edl`, { method: "PUT", headers: INTENT, body: JSON.stringify(body) });
     const bad = await put({ canvas: { width: 10, height: 10, fps: 24 }, shots: [] });
     expect(bad.status).toBe(400);
     const good = await put({ canvas: { width: 320, height: 240, fps: 24 }, shots: [{ start: 0, end: 1, source: { asset: "still1" } }], text: [{ text: "HI", start: 0, end: 1 }] });
@@ -135,8 +137,11 @@ describe("studio server", () => {
     expect((await part.arrayBuffer()).byteLength).toBe(10);
     expect((await fetch(`${base}/media/${ws.project.id}/..%2f..%2f..%2fproject.json`)).status).toBe(400);
     // Other sites can't drive the local editor.
-    const foreign = await fetch(`${base}/api/projects/${ws.project.id}/render`, { method: "POST", headers: { origin: "https://example.com" }, body: "{}" });
+    const foreign = await fetch(`${base}/api/projects/${ws.project.id}/render`, { method: "POST", headers: { ...INTENT, origin: "https://example.com" }, body: "{}" });
     expect(foreign.status).toBe(403);
+    // Nor can a page that doesn't send the intent header.
+    const unmarked = await fetch(`${base}/api/projects/${ws.project.id}/render`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+    expect(unmarked.status).toBe(403);
   });
 
   it("renders the picture-only preview on request", async () => {
@@ -153,7 +158,7 @@ describe("studio server", () => {
         if (text.includes('"rendered"') || text.includes("render-error")) return;
       }
     })();
-    expect((await fetch(`${base}/api/projects/${ws.project.id}/render`, { method: "POST", body: JSON.stringify({ mode: "notext" }) })).status).toBe(202);
+    expect((await fetch(`${base}/api/projects/${ws.project.id}/render`, { method: "POST", headers: INTENT, body: JSON.stringify({ mode: "notext" }) })).status).toBe(202);
     await done;
     await reader.cancel();
     expect(events.join("")).toContain('"rendered"');

@@ -76,6 +76,10 @@ describe("katana_backend set", () => {
     expect(nextBackend({ kind: "cloud", apiKey: CLOUD_KEY }, { kind: "http", url: "http://gpu-box.example:8188" })).toEqual({ kind: "http", url: "http://gpu-box.example:8188" });
     expect(nextBackend({ kind: "http", url: "http://gpu-box.example:8188", apiKey: "token", headers: { "X-Proxy": "1" } }, { kind: "cloud", apiKey: CLOUD_KEY })).toEqual({ kind: "cloud", apiKey: CLOUD_KEY });
     expect(nextBackend({ kind: "cloud", apiKey: CLOUD_KEY }, { kind: "cloud", url: "https://staging.cloud.example" })).toEqual({ kind: "cloud", apiKey: CLOUD_KEY, url: "https://staging.cloud.example" });
+    // A ComfyUI token stays with its host: a new http origin needs its own token.
+    expect(nextBackend({ kind: "http", url: "http://127.0.0.1:4387", apiKey: "supersecrettoken123", headers: { "X-Proxy": "1" } }, { kind: "http", url: "http://127.0.0.1:4389" })).toEqual({ kind: "http", url: "http://127.0.0.1:4389" });
+    expect(nextBackend({ kind: "http", url: "http://127.0.0.1:4387", apiKey: "old" }, { kind: "http", url: "http://127.0.0.1:4389", apiKey: "new" })).toEqual({ kind: "http", url: "http://127.0.0.1:4389", apiKey: "new" });
+    expect(nextBackend({ kind: "http", url: "http://127.0.0.1:4387", apiKey: "token" }, { kind: "http", url: "http://127.0.0.1:4387/" })).toMatchObject({ apiKey: "token" });
     // Switching from a remote ComfyUI to Cloud without a url goes to Comfy Cloud, not the old host.
     expect(createBackend(nextBackend({ kind: "http", url: "http://gpu-box.example:8188" }, { kind: "cloud", apiKey: CLOUD_KEY })).target).toBe("https://cloud.comfy.org");
   });

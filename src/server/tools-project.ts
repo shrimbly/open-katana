@@ -6,10 +6,11 @@ import { type License, licenseLabel, licenseWarnings, OPERATIONS, PROFILES, prof
 import { checkProfile } from "../comfy/resolve.js";
 import { chooseProfile, loadJobs } from "../comfy/jobs.js";
 import { backendEnvOverrides, type Config, nextBackend } from "../config.js";
-import { CATEGORIES, getPreset, listPresets, PresetSchema, savePreset } from "../presets/library.js";
+import { CATEGORIES, getPreset, listPresets, PresetSchema, savePreset, soundtrackPath } from "../presets/library.js";
 import { MODES, ROLES, Workspace } from "../project/workspace.js";
 import { FONTS } from "../render/fonts.js";
 import { packageRoot } from "../util/paths.js";
+import { isAppRun, refuseIfLocked, refuseInAppRun } from "./app-mode.js";
 import { result, safe, table } from "./content.js";
 import type { State } from "./state.js";
 import { WIDGETS, widgetMeta } from "./widgets.js";
@@ -103,6 +104,7 @@ export function registerProjectTools(server: McpServer, state: State): void {
       _meta: widgetMeta(WIDGETS.presets),
     },
     safe(async ({ query, category }) => {
+      refuseInAppRun();
       const presets = await listPresets({ query, category });
       const rows = presets.map((p) => [`/katana/${p.slug}`, p.title, p.category.replace("_", " "), p.referencePath ? "yes" : "recipe", p.description]);
       return result(
@@ -123,13 +125,14 @@ export function registerProjectTools(server: McpServer, state: State): void {
         preset: z.string().optional().describe("Preset slug, e.g. neon-rain or /katana/neon-rain"),
         subjects: z.array(media).max(10).default([]).describe("Photos of the character, product or outfit; the first should show the face clearly"),
         footage: z.array(media).max(20).default([]).describe("The user's own clips (clip mode, or reusable shots)"),
-        music: media.optional().describe("A soundtrack to use instead of the reference's audio"),
+        music: media.optional().describe("A soundtrack to use instead of the reference's audio (without one, a preset's own track is used)"),
         instructions: z.string().max(2000).optional(),
         mode: z.enum(MODES).default("remix"),
         title: z.string().max(80).optional(),
       }),
     },
     safe(async (a) => {
+      refuseInAppRun();
       const preset = a.preset ? await getPreset(a.preset) : undefined;
       if (!a.reference && !preset && !a.footage.length) {
         throw new Error("Give a reference video, a preset or footage. With nothing to work from, call katana_presets and let the user choose.");
@@ -140,9 +143,13 @@ export function registerProjectTools(server: McpServer, state: State): void {
       for (const s of a.subjects) await ws.import(s, "subject");
       for (const f of a.footage) await ws.import(f, "footage");
       if (a.music) await ws.import(a.music, "audio", { id: "music" });
+      // No music and no reference to take it from: the preset's own track is the soundtrack.
+      const bundled = !a.music && !refSource && preset ? soundtrackPath(preset) : undefined;
+      if (bundled) await ws.import(bundled, "audio", { id: "music", label: preset!.soundtrack!.title });
       if (preset) await ws.writeJson("plan/preset.json", preset);
       const rows = ws.project.assets.map((x) => [x.id, x.role, x.kind, x.width ? `${x.width}×${x.height}` : "", x.durationSec ? `${x.durationSec.toFixed(2)} s` : "", x.label]);
       const next = ws.reference() ? "Next: katana_backend (once per session), then katana_analyze." : "No reference video: plan directly from the preset recipe and the music (katana_plan).";
+      const track = bundled ? `\n\nSoundtrack: the preset's own track "${preset!.soundtrack!.title}" (${preset!.soundtrack!.licence}) is imported as asset music; the skeleton's grid is timed to it. To use the user's own track, import it as music instead.` : "";
       const recipe = preset
         ? [
             `\n\nPreset recipe (${preset.title}):\n${JSON.stringify(preset.recipe, null, 1)}`,
@@ -151,7 +158,7 @@ export function registerProjectTools(server: McpServer, state: State): void {
             preset.skeleton ? skeletonSummary(preset.skeleton) : "",
           ].filter(Boolean).join("\n\n")
         : "";
-      return result(`Project ${ws.project.id} (${ws.project.mode}).\n\n${table(["Asset", "Role", "Kind", "Size", "Length", "Label"], rows)}\n\n${next}${recipe}\n\n${resumeLine(ws)}`, {
+      return result(`Project ${ws.project.id} (${ws.project.mode}).\n\n${table(["Asset", "Role", "Kind", "Size", "Length", "Label"], rows)}\n\n${next}${track}${recipe}\n\n${resumeLine(ws)}`, {
         project: ws.project.id,
         mode: ws.project.mode,
         assets: ws.project.assets,
@@ -168,7 +175,9 @@ export function registerProjectTools(server: McpServer, state: State): void {
       inputSchema: z.object({ project: z.string(), source: media, role: z.enum(ROLES), id: z.string().regex(/^[a-z0-9_-]{1,24}$/i).optional() }),
     },
     safe(async ({ project, source, role, id }) => {
+      refuseInAppRun();
       const ws = await state.workspace(project);
+      refuseIfLocked(ws);
       const asset = await ws.import(source, role, { id });
       return result(`Imported ${asset.id} (${asset.role}, ${asset.kind}).`, { asset });
     }),
@@ -183,7 +192,8 @@ export function registerProjectTools(server: McpServer, state: State): void {
       annotations: { readOnlyHint: true },
     },
     safe(async ({ project }) => {
-      if (!project) {
+      // An app run is pinned to its project, so it never lists the others.
+      if (!project && !isAppRun()) {
         const list = await Workspace.list();
         return result(list.length ? table(["Project", "Title", "Mode", "Stage", "Updated"], list.slice(0, 20).map((p) => [p.id, p.title, p.mode, p.stage, p.updatedAt.slice(0, 16)])) : "No projects yet.", {
           projects: list.slice(0, 20).map((p) => ({ id: p.id, title: p.title, stage: p.stage })),
@@ -236,6 +246,7 @@ export function registerProjectTools(server: McpServer, state: State): void {
     safe(async ({ action, kind, url, apiKey, tier, profiles, commercial }) => {
       let envNote = "";
       if (action === "set") {
+        refuseInAppRun();
         const cfg = await state.config();
         const nextProfiles = { ...cfg.profiles };
         for (const [op, id] of Object.entries(profiles ?? {})) {
@@ -304,6 +315,7 @@ export function registerProjectTools(server: McpServer, state: State): void {
       }),
     },
     safe(async (a) => {
+      refuseInAppRun();
       let reference = a.reference;
       if (!reference && a.project) {
         const ws = await state.workspace(a.project);

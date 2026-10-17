@@ -58,11 +58,16 @@ export function table(headers: string[], rows: (string | number | undefined)[][]
   return [`| ${headers.join(" | ")} |`, `| ${headers.map(() => "---").join(" | ")} |`, ...rows.map((r) => `| ${r.map(esc).join(" | ")} |`)].join("\n");
 }
 
+/** What a tool body may use of the request: its abort signal (the client cancelled the call). */
+export interface ToolRequest {
+  mcpReq?: { signal?: AbortSignal };
+}
+
 /** Wraps a tool body so thrown errors become readable tool errors instead of protocol failures. */
-export function safe<A>(fn: (args: A) => Promise<CallToolResult>): (args: A) => Promise<CallToolResult> {
-  return async (args: A) => {
+export function safe<A>(fn: (args: A, req?: ToolRequest) => Promise<CallToolResult>): (args: A, req?: ToolRequest) => Promise<CallToolResult> {
+  return async (args: A, req?: ToolRequest) => {
     try {
-      return await fn(args);
+      return await fn(args, req);
     } catch (e) {
       return fail((e as Error).message);
     }
