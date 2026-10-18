@@ -90,7 +90,7 @@
       "binds": [{ "index": 6 }],
       "default": "CROWN ACCEPTED",
       "maxChars": 16,
-      "suggestions": ["ERA STARTS NOW", "AURA +1000", "THRONE SECURED", "UNBOTHERED"],
+      "suggestions": ["ERA STARTS NOW", "AURA +1000", "SEAT TAKEN", "UNBOTHERED"],
       "collapsed": false
     },
     {

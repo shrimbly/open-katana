@@ -8,8 +8,9 @@ import type { Workspace } from "../project/workspace.js";
 import { dataHome } from "../util/paths.js";
 import { run } from "../util/proc.js";
 import type { Backend, ModelChoices, OutputFile } from "./backend.js";
+import { CameraMoveSchema, writeCameraClip } from "./camera.js";
 import { sizeForAspect } from "./graph.js";
-import { CONTROL_MODES, type ControlMode, clipFrames, type Operation, OPERATIONS, type Profile, build, defaultProfile, estimateSeconds, licenseWarnings, profile } from "./operations.js";
+import { CONTROL_MODES, type ControlMode, DEPTH_MODELS, buildControlPreview, clipFrames, type Operation, OPERATIONS, type Profile, build, defaultProfile, estimateSeconds, h3LongSide, licenseWarnings, profile } from "./operations.js";
 import { checkProfile, resolveModels } from "./resolve.js";
 
 export const MotionSourceSchema = z.object({
@@ -23,8 +24,23 @@ export const MotionSourceSchema = z.object({
    * faces and logos, so never use them on a person you are replacing).
    */
   control: z.enum(CONTROL_MODES).default("pose"),
-  /** "stretch" spreads the source motion over the whole generated clip (slow motion); "hold" freezes its last frame. */
-  fit: z.enum(["stretch", "hold"]).default("stretch"),
+  /**
+   * "realtime" (default) keeps the source's speed: the clip is as long as the source span, rounded up
+   * to the model's frame rule, and any extra frames replay the move backwards (never slowed down).
+   * "stretch" spreads the source motion over the whole generated clip (slow motion, for a slow-mo
+   * beat); "hold" freezes its last frame.
+   */
+  fit: z.enum(["realtime", "stretch", "hold"]).default("realtime"),
+  /**
+   * Region of the source to keep, as fractions of its width and height, when the performer is small
+   * in the frame (a scope, a wide shot): the crop is scaled up to the output, so pose detection and
+   * the generated framing both follow the performer.
+   */
+  crop: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), w: z.number().gt(0).max(1), h: z.number().gt(0).max(1) }).optional(),
+  /** Which model reads depth for `control: "depth"`: Marigold V2 (default, sharper) or Depth Anything 3 (lighter download). */
+  depth: z.enum(DEPTH_MODELS).optional(),
+  /** How hard the control steers (default 1). About 0.6 for depth when the reference's subject has a different shape. */
+  strength: z.number().min(0.1).max(2).optional(),
 });
 
 export const JobSpecSchema = z.object({
@@ -42,6 +58,12 @@ export const JobSpecSchema = z.object({
   start: z.string().optional(),
   end: z.string().optional(),
   motion: MotionSourceSchema.optional(),
+  /**
+   * clip.motion without a source shot: a real camera move (orbit, arc, push-in with parallax) made from the
+   * start keyframe's own depth. Use it instead of a still with a zoom whenever the reference's camera
+   * travels around or toward the subject. Takes `start`, not `motion`.
+   */
+  camera: CameraMoveSchema.optional(),
   /** Seconds of video to generate (clips). The edit picks in-points from it. */
   durationSec: z.number().positive().max(10).optional(),
   /** Output aspect (width/height); defaults to the reference's. */
@@ -77,8 +99,25 @@ export const JobRecordSchema = z.object({
   outputs: z.array(z.string()).default([]),
   error: z.string().optional(),
   substituted: z.record(z.string(), z.string()).optional(),
+  /** Times the job was sent again, unchanged, after a server error that isn't about its inputs. */
+  retries: z.number().int().nonnegative().optional(),
 });
 export type JobRecord = z.infer<typeof JobRecordSchema>;
+
+/**
+ * Server errors that come and go on Comfy Cloud and aren't about the job's inputs: the same graph runs
+ * when sent again. MiniMax H3's conditioning nodes sometimes fail with a tensor-size mismatch on a busy
+ * worker (four failed in clusters in one edit, and the identical graphs then ran four times out of four),
+ * and a token can expire mid-run.
+ */
+const TRANSIENT_ERRORS = [/size of tensor a \(\d+\) must match the size of tensor b \(\d+\)[\s\S]*MiniMaxH3|MiniMaxH3[\s\S]*size of tensor a \(\d+\) must match/i, /Unauthorized: Please login first to use this node/i];
+const MAX_RETRIES = 1;
+
+export function isTransientError(error: string | undefined): boolean {
+  return Boolean(error && TRANSIENT_ERRORS.some((r) => r.test(error)));
+}
+
+const promptFile = (ws: Workspace, jobId: string) => ws.path("gen", "prompts", `${jobId}.json`);
 
 const JOBS = "plan/jobs.json";
 const UPLOADS = "plan/uploads.json";
@@ -141,29 +180,55 @@ export async function ensureUploaded(ws: Workspace, backend: Backend, file: stri
 export async function makeControlClip(
   input: string,
   out: string,
-  opts: { startSec: number; endSec: number; fps: number; frames: number; width: number; height: number; control: ControlMode | "raw"; fit: "stretch" | "hold" },
+  opts: {
+    startSec: number; endSec: number; fps: number; frames: number; width: number; height: number;
+    control: ControlMode | "raw"; fit: "realtime" | "stretch" | "hold"; crop?: { x: number; y: number; w: number; h: number };
+    /** WebP quality (default 75; control maps need no more, frames to upscale do). */
+    quality?: number;
+  },
 ): Promise<string> {
   const span = Math.max(1 / opts.fps, opts.endSec - opts.startSec);
   const target = opts.frames / opts.fps;
-  const filters = [
+  const c = opts.crop;
+  const head = [
+    ...(c ? [`crop=iw*${c.w.toFixed(4)}:ih*${c.h.toFixed(4)}:iw*${c.x.toFixed(4)}:ih*${c.y.toFixed(4)}`] : []),
     ...(opts.fit === "stretch" ? [`setpts=PTS*${(target / span).toFixed(6)}`] : []),
     `fps=${opts.fps}`,
     `scale=${opts.width}:${opts.height}:force_original_aspect_ratio=increase`,
     `crop=${opts.width}:${opts.height}`,
     ...(opts.control === "edges" ? ["edgedetect=low=0.08:high=0.3"] : []),
-    ...(opts.fit === "hold" ? [`tpad=stop_mode=clone:stop=${opts.frames}`] : []),
-    "format=rgb24",
-  ];
+  ].join(",");
+  // realtime: the move at its own speed, then back and forth (forward, reversed without its two
+  // turning frames, …) until the model's frame count is reached: no frame is slowed down or frozen.
+  // Faint temporal noise keeps every frame distinct: the animated-WebP encoder merges identical frames,
+  // which would shorten the control video (held frames, still sources) and break its timing.
+  const sourceFrames = Math.max(1, Math.round(span * opts.fps));
+  const cycle = Math.max(1, 2 * sourceFrames - 2);
+  const tail = "noise=alls=2:allf=t,format=rgb24";
+  const graph =
+    opts.fit === "realtime" && opts.frames > sourceFrames && sourceFrames > 2
+      ? `[0:v]${head},trim=end_frame=${sourceFrames},split[f][b];[b]reverse,trim=start_frame=1:end_frame=${sourceFrames - 1}[r];[f][r]concat=n=2:v=1:a=0,loop=loop=${Math.ceil(opts.frames / cycle)}:size=${cycle},${tail}[v]`
+      : `[0:v]${head}${opts.fit === "hold" || opts.fit === "realtime" ? `,tpad=stop_mode=clone:stop=${opts.frames}` : ""},${tail}[v]`;
   await mkdir(join(out, ".."), { recursive: true });
   await run("ffmpeg", [
     "-v", "error", "-y",
     "-ss", String(opts.startSec), "-t", String(span), "-i", input,
-    "-vf", filters.join(","),
+    "-filter_complex", graph, "-map", "[v]",
     "-frames:v", String(opts.frames),
-    "-loop", "0", "-lossless", "0", "-q:v", "75",
+    "-loop", "0", "-lossless", "0", "-q:v", String(opts.quality ?? 75),
     out,
   ]);
   return out;
+}
+
+/**
+ * Seconds of picture a clip job asks for. A realtime motion job is exactly as long as the source
+ * span it re-performs; everything else uses its durationSec (default 2 s).
+ */
+export function clipSeconds(spec: Pick<JobSpec, "operation" | "durationSec" | "motion">): number {
+  const m = spec.motion;
+  if (spec.operation === "clip.motion" && m && m.fit === "realtime") return Math.max(0.05, m.endSec - m.startSec);
+  return spec.durationSec ?? 2;
 }
 
 function referenceAspect(ws: Workspace): number {
@@ -180,13 +245,30 @@ export interface ProfileChoice {
   onDemandModels?: boolean;
 }
 
+/** The kind of control frames a clip.motion job sends: a camera move, or its motion source's control. */
+export function motionControl(spec: Partial<Pick<JobSpec, "operation" | "motion" | "camera">>): "pose" | "depth" | "edges" | "camera" | undefined {
+  if (spec.operation !== "clip.motion") return undefined;
+  return spec.camera ? "camera" : spec.motion?.control;
+}
+
 /** The profile a job runs on: the job's own, then the configured override, then the default. */
-export function chooseProfile(spec: Pick<JobSpec, "operation" | "profile">, opts: ProfileChoice): string {
+export function chooseProfile(spec: Pick<JobSpec, "operation" | "profile"> & Partial<Pick<JobSpec, "motion" | "camera">>, opts: ProfileChoice): string {
   const { catalog, onDemandModels } = opts;
   // On Comfy Cloud, model files load on demand: a profile only needs its nodes.
   const runnable = catalog ? (p: Profile) => (onDemandModels ? checkProfile(p, catalog).missingNodes.length === 0 : checkProfile(p, catalog).runnable) : undefined;
-  return spec.profile ?? opts.overrides[spec.operation] ?? defaultProfile(spec.operation as Operation, opts.tier, runnable, { commercial: opts.commercial }).id;
+  const control = motionControl(spec);
+  const override = opts.overrides[spec.operation];
+  const fits = (id: string | undefined) => {
+    const c = id ? profile(id).controls : undefined;
+    return !control || !c || c.includes(control);
+  };
+  if (spec.profile) return spec.profile;
+  if (override && fits(override)) return override;
+  return defaultProfile(spec.operation as Operation, opts.tier, runnable, { commercial: opts.commercial, control }).id;
 }
+
+/** GPU seconds of the depth pass a camera move makes on its keyframe first. */
+const CAMERA_DEPTH_SEC = 20;
 
 /**
  * Estimate (seconds of GPU time, all takes) for a spec on a profile without submitting anything. Pure:
@@ -194,13 +276,25 @@ export function chooseProfile(spec: Pick<JobSpec, "operation" | "profile">, opts
  */
 export function estimateSpecFor(spec: JobSpec, profileId: string, aspect: number): { seconds: number; width: number; height: number; frames?: number } {
   const prof = profile(profileId);
-  const { width, height } = sizeForAspect(spec.aspect ?? aspect, spec.longSide ?? prof.longSide, prof.sizeStep);
-  const frames = prof.fps ? clipFrames(prof, Math.round((spec.durationSec ?? 2) * prof.fps)) : undefined;
-  return { seconds: estimateSeconds(profileId, { width, height, frames }) * spec.takes, width, height, frames };
+  const a = spec.aspect ?? aspect;
+  const { width, height } = sizeForAspect(a, spec.longSide ?? (prof.frames === "h3" ? h3LongSide(a, prof.longSide) : prof.longSide), prof.sizeStep);
+  // An upscale keeps its clip's frames: durationSec says how long the clip is (no duration: a still).
+  const frames = prof.fps ? clipFrames(prof, Math.round(clipSeconds(spec) * prof.fps)) : spec.operation === "upscale" && spec.durationSec ? Math.round(spec.durationSec * 24) : undefined;
+  return { seconds: estimateSeconds(profileId, { width, height, frames }) * spec.takes + (spec.camera ? CAMERA_DEPTH_SEC : 0), width, height, frames };
 }
 
 /** Estimate (seconds of GPU time) for a spec in a project without submitting anything. */
 export function estimateSpec(ws: Workspace, spec: JobSpec, profileId: string): { seconds: number; width: number; height: number; frames?: number } {
+  if (spec.operation === "upscale" && spec.start) {
+    // The source sets the shape and, for a clip, the frame count.
+    const src = ws.project.assets.find((a) => a.id === spec.start);
+    if (src?.width && src.height) {
+      const prof = profile(profileId);
+      const { width, height } = sizeForAspect(src.width / src.height, spec.longSide ?? prof.longSide, prof.sizeStep);
+      const frames = src.kind === "video" ? (src.frameCount ?? Math.round((src.durationSec ?? 2) * (src.fps ?? 24))) : undefined;
+      return { seconds: estimateSeconds(profileId, { width, height, frames }) * spec.takes, width, height, frames };
+    }
+  }
   return estimateSpecFor(spec, profileId, referenceAspect(ws));
 }
 
@@ -244,6 +338,39 @@ export interface SubmitResult {
   warnings: string[];
 }
 
+/**
+ * The Marigold V2 depth of an uploaded keyframe, for camera moves: one short job, waited for here and
+ * cached in gen/control by the upload's name. It isn't a take in jobs.json (it takes about 20 s).
+ */
+async function keyframeDepth(ws: Workspace, backend: Backend, uploaded: string, models?: ModelChoices): Promise<string> {
+  const file = ws.path("gen", "control", `depth-${uploaded.replace(/\.[A-Za-z0-9]+$/, "").replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 80)}.png`);
+  if (existsSync(file)) return file;
+  let prompt = buildControlPreview({ controlImage: uploaded, controlMode: "depth", depthModel: "marigold", kind: "image", filenamePrefix: `open-katana/${ws.project.id}/depth` }).prompt as Record<string, never>;
+  if (models) prompt = resolveModels(prompt, models).prompt as Record<string, never>;
+  const id = await backend.submit(prompt);
+  const until = Date.now() + 10 * 60_000;
+  for (;;) {
+    if (shuttingDown) {
+      await backend.cancel(id).catch(() => undefined);
+      throw new Error("[STOPPED] Stopped in the app.");
+    }
+    const poll = await backend.poll(id);
+    if (poll.state === "completed") {
+      const out = poll.outputs.find((o) => /\.png$/i.test(o.filename)) ?? poll.outputs[0];
+      if (!out) throw new Error("The depth pass for a camera move returned no image.");
+      await mkdir(join(file, ".."), { recursive: true });
+      await backend.download(out, file);
+      return file;
+    }
+    if (poll.state === "error" || poll.state === "cancelled") throw new Error(`The depth pass for a camera move failed: ${poll.error ?? poll.state}`);
+    if (Date.now() > until) {
+      await backend.cancel(id).catch(() => undefined);
+      throw new Error("The depth pass for a camera move took over 10 minutes.");
+    }
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+}
+
 export async function submitJobs(ws: Workspace, backend: Backend, specs: JobSpec[], opts: { tier: "quality" | "lite"; overrides: Record<string, string>; commercial?: boolean }): Promise<SubmitResult> {
   const submitted: JobRecord[] = [];
   const catalog = await backend.catalog().catch(() => undefined);
@@ -254,14 +381,17 @@ export async function submitJobs(ws: Workspace, backend: Backend, specs: JobSpec
     const profileId = chosen[i]!;
     const prof = profile(profileId);
     if (prof.operation !== spec.operation) throw new Error(`Profile ${profileId} does ${prof.operation}, not ${spec.operation}`);
-    const aspect = spec.aspect ?? referenceAspect(ws);
-    const { width, height } = sizeForAspect(aspect, spec.longSide ?? prof.longSide, prof.sizeStep);
+    const upscaleSource = spec.operation === "upscale" ? (spec.start ? ws.asset(spec.start) : undefined) : undefined;
+    if (spec.operation === "upscale" && !upscaleSource) throw new Error(`Line ${spec.line}: upscale needs start (the accepted clip or still to upscale)`);
+    const aspect = spec.aspect ?? (upscaleSource?.width && upscaleSource.height ? upscaleSource.width / upscaleSource.height : referenceAspect(ws));
+    const { width, height } = sizeForAspect(aspect, spec.longSide ?? (prof.frames === "h3" ? h3LongSide(aspect, prof.longSide) : prof.longSide), prof.sizeStep);
     const fps = prof.fps;
-    const frames = fps ? clipFrames(prof, Math.round((spec.durationSec ?? 2) * fps)) : undefined;
+    const frames = fps ? clipFrames(prof, Math.round(clipSeconds(spec) * fps)) : undefined;
 
     const upload = async (assetId: string) => ensureUploaded(ws, backend, ws.assetPath(assetId), assetId);
     const images = await Promise.all((spec.images ?? []).map(upload));
-    const startImage = spec.start ? await upload(spec.start) : undefined;
+    // A clip to upscale goes up as its frames (below), not as the video file.
+    const startImage = spec.start && upscaleSource?.kind !== "video" ? await upload(spec.start) : undefined;
     const endImage = spec.end ? await upload(spec.end) : undefined;
     let controlImage: string | undefined;
     let matteFps: number | undefined;
@@ -280,12 +410,32 @@ export async function submitJobs(ws: Workspace, backend: Backend, specs: JobSpec
       });
       controlImage = await ensureUploaded(ws, backend, frames, `matte:${clip.id}:${matteFps}`);
     }
-    if (spec.operation === "clip.motion") {
-      if (!spec.motion) throw new Error(`Line ${spec.line}: clip.motion needs motion {startSec, endSec}`);
+    if (upscaleSource?.kind === "video") {
+      // Every frame at the clip's own size and rate, so the upscaled copy lines up with it frame for frame.
+      const clip = upscaleSource;
+      matteFps = clip.fps ?? 24;
+      matteFrames = clip.frameCount ?? Math.max(1, Math.round((clip.durationSec ?? 1) * matteFps));
+      const frames = ws.path("gen", "control", `${spec.line}-source.webp`);
+      await makeControlClip(ws.assetPath(clip.id), frames, {
+        startSec: 0, endSec: clip.durationSec ?? 1, fps: matteFps, frames: matteFrames,
+        width: Math.round((clip.width ?? 576) / 2) * 2, height: Math.round((clip.height ?? 1024) / 2) * 2, control: "raw", fit: "hold", quality: 95,
+      });
+      controlImage = await ensureUploaded(ws, backend, frames, `upscale:${clip.id}:${statSync(ws.assetPath(clip.id)).mtimeMs}`);
+    }
+    if (spec.operation === "clip.motion" && spec.camera) {
+      if (spec.motion) throw new Error(`Line ${spec.line}: give clip.motion either motion (a reference shot's move) or camera (a camera move), not both`);
+      if (!startImage) throw new Error(`Line ${spec.line}: a camera move needs start (the keyframe it moves around)`);
+      const depth = await keyframeDepth(ws, backend, startImage, catalog?.models);
+      const ctrl = ws.path("gen", "control", `${spec.line}-camera.webp`);
+      await writeCameraClip(depth, ctrl, { move: spec.camera, frames: frames ?? 33, fps: fps ?? 24, width, height });
+      const c = spec.camera;
+      controlImage = await ensureUploaded(ws, backend, ctrl, `camera:${spec.line}:${startImage}:${c.orbit}:${c.arc}:${c.push}:${c.ease}:${frames}:${width}x${height}`);
+    } else if (spec.operation === "clip.motion") {
+      if (!spec.motion) throw new Error(`Line ${spec.line}: clip.motion needs motion {startSec, endSec} (a reference shot's move) or camera (a camera move)`);
       const m = spec.motion;
       const ctrl = ws.path("gen", "control", `${spec.line}.webp`);
       await makeControlClip(ws.assetPath(m.asset), ctrl, { ...m, fps: fps ?? 16, frames: frames ?? 33, width, height });
-      controlImage = await ensureUploaded(ws, backend, ctrl, `control:${spec.line}:${m.asset}:${m.startSec}-${m.endSec}:${m.control}:${m.fit}:${frames}`);
+      controlImage = await ensureUploaded(ws, backend, ctrl, `control:${spec.line}:${m.asset}:${m.startSec}-${m.endSec}:${m.control}:${m.fit}:${frames}:${m.crop ? Object.values(m.crop).join(",") : ""}`);
     }
 
     for (let take = 1; take <= spec.takes; take++) {
@@ -310,7 +460,9 @@ export async function submitJobs(ws: Workspace, backend: Backend, specs: JobSpec
             startImage,
             endImage,
             controlImage,
-            controlMode: spec.motion?.control,
+            controlMode: spec.camera ? undefined : spec.motion?.control,
+            controlStrength: spec.camera?.strength ?? spec.motion?.strength,
+            depthModel: spec.motion?.depth,
             frames: matteFrames ?? frames,
             fps: matteFps,
             filenamePrefix: `open-katana/${ws.project.id}/${spec.line}_t${takeNo}`,
@@ -347,6 +499,9 @@ export async function submitJobs(ws: Workspace, backend: Backend, specs: JobSpec
           jobs.push(record);
           return { record, prompt };
         });
+        // Kept so a server error that isn't about the inputs can be sent again unchanged.
+        await mkdir(join(promptFile(ws, record.id), ".."), { recursive: true });
+        await writeFile(promptFile(ws, record.id), JSON.stringify(prompt));
         let promptId: string;
         try {
           promptId = await backend.submit(prompt, { promptId: sendId });
@@ -401,7 +556,8 @@ async function collect(ws: Workspace, backend: Backend, job: JobRecord, files: O
     const ext = extname(file.filename).toLowerCase() || ".bin";
     const dest = join(dir, `${job.id}${media.length > 1 ? `_${i + 1}` : ""}${ext}`);
     await backend.download({ ...file, promptId: file.promptId ?? job.promptId }, dest);
-    const asset = await ws.register({ path: dest, role: "generated", id: `${job.id}${media.length > 1 ? `_${i + 1}` : ""}`, label: job.spec.prompt.slice(0, 80), jobId: job.id, lineId: job.line });
+    const upscaleOf = job.spec.operation === "upscale" && job.spec.start ? job.spec.start : undefined;
+    const asset = await ws.register({ path: dest, role: "generated", id: `${job.id}${media.length > 1 ? `_${i + 1}` : ""}`, label: job.spec.prompt.slice(0, 80), jobId: job.id, lineId: job.line, upscaleOf });
     if (asset.kind === "video" && asset.fps && asset.durationSec) {
       await sampleSheet({
         input: dest,
@@ -429,7 +585,7 @@ export async function waitJobs(ws: Workspace, backend: Backend, opts: { ids?: st
 }
 
 /** What one poll found for a job, applied to jobs.json only while the job is still open there. */
-type Seen = Pick<JobRecord, "id" | "state"> & Partial<Pick<JobRecord, "finishedAt" | "outputs" | "error" | "promptId">> & { adopt?: string };
+type Seen = Pick<JobRecord, "id" | "state"> & Partial<Pick<JobRecord, "finishedAt" | "outputs" | "error" | "promptId">> & { adopt?: string; resent?: string };
 
 /**
  * waitJobs, plus what its last polling pass saw (to tell a backend that stopped answering from a slow one).
@@ -468,14 +624,33 @@ export async function waitJobsDetailed(
         const actual = (Date.parse(finishedAt) - Date.parse(job.submittedAt)) / 1000;
         const compute = Math.max(1, actual - (JOB_OVERHEAD_SEC[backend.kind] ?? 0));
         await recordTiming(backend.target, job.profile, job.estimateSec, compute).catch(() => undefined);
+      } else if (res.state === "error" && isTransientError(res.error) && (job.retries ?? 0) < MAX_RETRIES && existsSync(promptFile(ws, job.id))) {
+        const resent = await backend.submit(JSON.parse(await readFile(promptFile(ws, job.id), "utf8"))).catch(() => undefined);
+        if (resent) seen.push({ id: job.id, state: "pending", resent, error: res.error });
+        else seen.push({ id: job.id, state: "error", finishedAt: new Date().toISOString(), error: res.error });
       } else if (res.state === "error" || res.state === "cancelled") {
-        seen.push({ id: job.id, state: res.state, finishedAt: new Date().toISOString(), error: res.error });
+        const again = res.state === "error" && isTransientError(res.error) && (job.retries ?? 0) >= MAX_RETRIES;
+        const error = again ? `${res.error} (sent twice; this Comfy Cloud error is usually about the server, not the job: resubmit it unchanged before changing its move or prompt)` : res.error;
+        seen.push({ id: job.id, state: res.state, finishedAt: new Date().toISOString(), error });
       } else if (res.state !== job.state) seen.push({ id: job.id, state: res.state });
     }
+    const orphans: string[] = [];
     const jobs = await updateJobs(ws, (all) => {
       for (const s of seen) {
         const cur = all.find((j) => j.id === s.id);
         if (!cur) continue;
+        if (s.resent) {
+          // Cancelled while it was being sent again: the new copy goes too.
+          if (!isOpen(cur)) {
+            orphans.push(s.resent);
+            continue;
+          }
+          cur.promptId = s.resent;
+          cur.state = "pending";
+          cur.retries = (cur.retries ?? 0) + 1;
+          cur.submittedAt = new Date().toISOString();
+          continue;
+        }
         if (s.adopt && cur.sending === s.adopt) {
           cur.promptId = s.adopt;
           delete cur.sending;
@@ -490,6 +665,7 @@ export async function waitJobsDetailed(
       }
       return all.filter(watched).map((j) => ({ ...j }));
     });
+    for (const id of orphans) await backend.cancel(id).catch(() => undefined);
     const stillOpen = jobs.filter(isOpen);
     if (!stillOpen.length || Date.now() >= deadline || opts.signal?.aborted) return { jobs, lastPass: pass };
     await new Promise<void>((r) => {

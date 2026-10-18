@@ -40,7 +40,8 @@ describe("graph builders", () => {
     for (const p of PROFILES) {
       const b = build(p.id, p.operation === "matte" ? { ...params, controlImage: undefined } : params);
       const classes = Object.values(b.prompt).map((n) => (n as { class_type: string }).class_type);
-      expect(classes).toContain(p.operation.startsWith("clip") ? "SaveVideo" : "SaveImage");
+      // An upscale given a clip's frames (controlImage) saves a video, like the clips.
+      expect(classes).toContain(p.operation.startsWith("clip") || p.operation === "upscale" ? "SaveVideo" : "SaveImage");
       for (const node of p.nodes) expect(classes, `${p.id} uses ${node}`).toContain(node);
     }
   });
@@ -56,8 +57,82 @@ describe("graph builders", () => {
     const classes = Object.values(pose.prompt).map((n) => (n as { class_type: string }).class_type);
     expect(classes).toContain("SDPoseKeypointExtractor");
     expect(classes).toContain("SDPoseDrawKeypoints");
-    const depth = build("wan22-14b-fun-control", { ...params, controlMode: "depth" });
+    const depth = build("wan22-14b-fun-control", { ...params, controlMode: "depth", depthModel: "da3" });
     expect(Object.values(depth.prompt).map((n) => (n as { class_type: string }).class_type)).toContain("DA3Inference");
+  });
+
+  it("read depth with Marigold V2 by default: one deterministic step, near as bright", () => {
+    const nodes = Object.values(build("minimax-h3-motion", { ...params, controlMode: "depth" }).prompt) as { class_type: string; inputs: Record<string, unknown> }[];
+    const classes = nodes.map((n) => n.class_type);
+    expect(classes).not.toContain("DA3Inference");
+    expect(nodes.find((n) => n.class_type === "MarigoldV2PostProcess")?.inputs.prediction).toBe("depth");
+    expect(nodes.find((n) => n.class_type === "ManualSigmas")?.inputs.sigmas).toBe("0.5, 0");
+    expect(classes).toContain("DisableNoise");
+    expect(nodes.find((n) => n.class_type === "LoraLoaderModelOnly" && n.inputs.lora_name === "marigold_v2_depth_log_stage2.safetensors")).toBeTruthy();
+  });
+
+  it("steer H3 reference-to-video with the control frames, the keyframe pinned at frame 0", () => {
+    const b = build("minimax-h3-motion-ref", { ...params, images: ["p1.png", "p2.png"], controlMode: "depth", controlStrength: 0.6 });
+    const nodes = Object.values(b.prompt) as { class_type: string; inputs: Record<string, unknown> }[];
+    expect(nodes.find((n) => n.class_type === "MiniMaxH3FunControlNetApply")?.inputs.strength).toBe(0.6);
+    const ref = nodes.find((n) => n.class_type === "MiniMaxH3ReferenceToVideo")!;
+    expect(Object.keys(ref.inputs).filter((k) => k.startsWith("ref_images."))).toHaveLength(2);
+    expect(nodes.find((n) => n.class_type === "MiniMaxH3AddGuide")?.inputs.frame_idx).toBe(0);
+  });
+
+  it("find people before reading their pose, instead of a fixed corner box", () => {
+    for (const id of ["wan22-14b-fun-control", "minimax-h3-motion"]) {
+      const nodes = Object.values(build(id, { ...params, controlMode: "pose" }).prompt) as { class_type: string; inputs: Record<string, unknown> }[];
+      const detect = nodes.find((n) => n.class_type === "RTDETR_detect");
+      expect(detect?.inputs, id).toMatchObject({ class_name: "person" });
+      // bboxes is a link to the detector, never a literal region.
+      expect(Array.isArray(nodes.find((n) => n.class_type === "SDPoseKeypointExtractor")!.inputs.bboxes), id).toBe(true);
+    }
+  });
+
+  it("run MiniMax H3 at full quality by default and turbo only in the turbo variants", () => {
+    const of = (id: string, aspect: number) => {
+      const b = build(id, { ...params, aspect });
+      const nodes = Object.values(b.prompt) as { class_type: string; inputs: Record<string, unknown> }[];
+      return { b, lora: nodes.some((n) => n.class_type === "LoraLoaderModelOnly"), steps: nodes.find((n) => n.class_type === "BasicScheduler")!.inputs.steps };
+    };
+    // Native canvas: about 1 MP, 768×1344 for vertical edits and 1024×768 for 4:3.
+    expect(of("minimax-h3-i2v", 9 / 16)).toMatchObject({ b: { width: 768, height: 1344 }, lora: false, steps: 20 });
+    expect(of("minimax-h3-flf", 4 / 3)).toMatchObject({ b: { width: 1024, height: 768 }, lora: false, steps: 20 });
+    expect(of("minimax-h3-r2v", 16 / 9)).toMatchObject({ b: { width: 1344, height: 768 }, lora: false, steps: 20 });
+    expect(of("minimax-h3-i2v-turbo", 9 / 16)).toMatchObject({ lora: true, steps: 8 });
+    expect(of("minimax-h3-flf-turbo", 9 / 16)).toMatchObject({ lora: true, steps: 8 });
+    expect(of("minimax-h3-r2v-turbo", 9 / 16)).toMatchObject({ lora: true, steps: 4 });
+    // Motion transfer: the turbo LoRA at 6 steps tested best, on the 4:3 native canvas.
+    expect(of("minimax-h3-motion", 4 / 3)).toMatchObject({ b: { width: 1024, height: 768 }, lora: true, steps: 6 });
+  });
+
+  it("drive Wan Animate 2 straight from the reference frames, with the hero as the identity image", () => {
+    const b = build("wan-animate2", { ...params, aspect: 4 / 3, frames: 26 });
+    const nodes = Object.values(b.prompt) as { class_type: string; inputs: Record<string, unknown> }[];
+    const animate = nodes.find((n) => n.class_type === "WanAnimate2ToVideo")!;
+    expect(Array.isArray(animate.inputs.pose_video)).toBe(true);
+    expect(Array.isArray(animate.inputs.reference_image)).toBe(true);
+    expect(animate.inputs.length).toBe(29);
+    expect(nodes.some((n) => n.class_type === "SDPoseKeypointExtractor")).toBe(false);
+    expect(b).toMatchObject({ width: 832, height: 624, fps: 24 });
+  });
+});
+
+describe("clip defaults", () => {
+  it("make clips on MiniMax H3 and motion transfer on Wan Animate 2, with Wan 2.2 as the Apache-2.0 fallback", () => {
+    expect(defaultProfile("clip.i2v").id).toBe("minimax-h3-i2v");
+    expect(defaultProfile("clip.flf").id).toBe("minimax-h3-flf");
+    expect(defaultProfile("clip.r2v").id).toBe("minimax-h3-r2v");
+    expect(defaultProfile("clip.motion").id).toBe("wan-animate2");
+    expect(defaultProfile("clip.i2v", "lite").id).toBe("minimax-h3-i2v-turbo");
+    // H3's licence is restricted, not non-commercial: the commercial switch keeps it and warns.
+    expect(defaultProfile("clip.i2v", "quality", undefined, { commercial: true }).id).toBe("minimax-h3-i2v");
+    // A backend without the H3 nodes falls back to Wan.
+    const noH3 = (p: { nodes: string[] }) => !p.nodes.some((n) => n.startsWith("MiniMaxH3"));
+    expect(defaultProfile("clip.i2v", "quality", noH3).id).toBe("wan22-14b-i2v");
+    expect(defaultProfile("clip.flf", "quality", noH3).id).toBe("wan22-14b-flf");
+    expect(defaultProfile("clip.motion", "quality", noH3).id).toBe("wan-animate2");
   });
 });
 
@@ -129,7 +204,7 @@ describe("HTTP backend against a mock ComfyUI", () => {
     const backend = new HttpBackend({ kind: "http", url });
     expect((await backend.check()).ok).toBe(true);
     const ws = await Workspace.create({ title: "mock", root: await tempDir("ok-proj-") });
-    const { submitted } = await submitJobs(ws, backend, [{ line: "plate1", operation: "still.generate", prompt: "empty rain-wet street at night, no people", takes: 1 }], { tier: "lite", overrides: {} });
+    const { submitted } = await submitJobs(ws, backend, [{ line: "plate1", operation: "still.generate", profile: "z-image-turbo", prompt: "empty rain-wet street at night, no people", takes: 1 }], { tier: "lite", overrides: {} });
     expect(submitted).toHaveLength(1);
     expect(JSON.stringify(prompts[0])).toContain("z_image_turbo_bf16.safetensors");
     const done = await waitJobs(ws, backend, { timeoutSec: 20, intervalSec: 0.05 });
@@ -341,10 +416,14 @@ describe("still models", () => {
   it("defaults to the tested best model and falls back to what the backend can run", () => {
     expect(defaultProfile("still.compose").id).toBe("qwen21-edit");
     expect(defaultProfile("still.face").id).toBe("face-crop");
-    expect(defaultProfile("still.generate").id).toBe("z-image-turbo");
+    // Plates share the keyframe model's weights; Z-Image Turbo is the fallback (and the commercial pick).
+    expect(defaultProfile("still.generate").id).toBe("qwen21");
+    expect(defaultProfile("still.generate", "lite").id).toBe("qwen21-turbo");
+    expect(defaultProfile("still.generate", "quality", undefined, { commercial: true }).id).toBe("z-image-turbo");
+    expect(profile("qwen21").models).toEqual(profile("qwen21-edit").models);
     expect(defaultProfile("still.compose", "lite").id).toBe("qwen21-turbo-edit");
     expect(defaultProfile("still.compose", "quality", (p) => !p.id.startsWith("qwen21")).id).toBe("boogu-edit");
-    expect(defaultProfile("still.generate", "quality", (p) => p.id !== "z-image-turbo").id).toBe("ernie-image-turbo");
+    expect(defaultProfile("still.generate", "quality", (p) => !p.id.startsWith("qwen21") && p.id !== "z-image-turbo").id).toBe("ernie-image-turbo");
   });
 
   it("keeps opt-in profiles out of the lite fallback", () => {
@@ -382,6 +461,12 @@ describe("Comfy Cloud on-demand models", () => {
     const err = (message: string) => Object.assign(new Error(message), { code: "workflow_unknown_nodes" });
     expect(onlyUnlistedModels(err("comfy run: workflow_unknown_nodes — Workflow has 2 validation error(s) against cloud (node 1: 'qwen_image_2.1_turbo_int8_convrot.safetensors' not in 377 known options for unet_name — closest: x\nnode 2: 'qwen3vl_8b_int8_convrot.safetensors' not in 81 known options for clip_name — closest: y)"))).toBe(true);
     expect(onlyUnlistedModels(err("comfy run: workflow_unknown_nodes — (node 3: unknown class_type 'Foo')"))).toBe(false);
+    // ModelPatchLoader's input is just "name": the H3 Fun ControlNet patch is unlisted on Comfy Cloud but runs.
+    expect(onlyUnlistedModels(err("comfy run: workflow_unknown_nodes — Workflow has 1 validation error(s) against cloud (node 6: 'minimax_h3_fun_controlnet_union_pruned_int8_convrot.safetensors' not in 26 known options for name — closest: x)"))).toBe(true);
+    // Qwen-Image 2.1 text-to-image leaves the encoder's image inputs empty, as Comfy's own template does.
+    expect(onlyUnlistedModels(err("comfy run: workflow_unknown_nodes — (node 1: 'qwen_image_2.1_int8_convrot.safetensors' not in 377 known options for unet_name — closest: x\nnode 5: required autogrow input 'images' has no connected slots — the server will reject this node)"))).toBe(true);
+    // A non-model value that isn't allowed is a real error.
+    expect(onlyUnlistedModels(err("comfy run: workflow_unknown_nodes — (node 4: 'banana' not in 3 known options for sampler_name — closest: euler)"))).toBe(false);
     expect(onlyUnlistedModels(Object.assign(new Error("x"), { code: "other" }))).toBe(false);
   });
 });

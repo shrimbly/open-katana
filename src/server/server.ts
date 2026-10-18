@@ -15,7 +15,7 @@ export const VERSION: string = (JSON.parse(readFileSync(join(packageRoot(), "pac
 
 const INSTRUCTIONS = `open-katana remixes a reference edit (aura edits especially) with the user's own character, product or outfit, generating shots on the user's ComfyUI and cutting the edit locally with ffmpeg.
 A message starting with /katana (optionally /katana/<preset>) starts the workflow. If the katana skill is not loaded, call katana_guide first and follow it.
-Order: katana_start → katana_backend (once) → katana_analyze → katana_view every review page → katana_review → katana_plan → show the estimate and get approval → katana_generate → katana_wait → katana_judge → katana_edit → katana_render (preview, then final) → katana_deliver. katana_studio gives the user a timeline editor link for the project at any point after the first edit.
+Order: katana_start → katana_backend (once) → katana_analyze → katana_view every review page → katana_review → katana_plan → show the estimate and get approval → katana_generate → katana_wait → katana_judge → katana_edit → katana_render (preview) → katana_upscale → katana_wait → katana_render (final) → katana_deliver. katana_studio gives the user a timeline editor link for the project at any point after the first edit.
 A bare /katana with nothing attached opens katana_presets. Never generate before the review is logged and the user approved the estimate.`;
 
 export function createServer(state = new State()): McpServer {

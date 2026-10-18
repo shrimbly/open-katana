@@ -324,7 +324,23 @@ export interface SetupStatus {
   blockers: { code: SetupCode; message: string }[];
 }
 export interface GpuSetupRequest { kind: "http" | "cloud" | "comfy-cli"; url?: string; apiKey?: string; saveEnvSecret?: boolean }
-export interface AppSettings { model: "opus" | "sonnet"; maxParallelRuns: 1 | 2 | 3; defaultClaudeCapUsd: number; keepAwake: boolean; licencesAcknowledged: string[] }
+export interface AppSettings {
+  model: "opus" | "sonnet";
+  maxParallelRuns: 1 | 2 | 3;
+  defaultClaudeCapUsd: number;
+  keepAwake: boolean;
+  licencesAcknowledged: string[];
+  /** Instagram links: the account whose saved instaloader session to use ("" for none). Never a password. */
+  instagramUser?: string;
+  /** Instagram links: a browser to borrow the Instagram login from ("" for none). */
+  instagramBrowser?: string;
+}
+/** GET /api/links: whether Instagram links can be fetched, and how the app signs in to Instagram. */
+export interface LinkStatus {
+  instaloader: { found: boolean; version?: string; install: string };
+  /** A saved instaloader session, a browser's cookies, or signed out (public posts, often rate-limited). */
+  login: { mode: "session" | "browser" | "none"; username?: string; browser?: string; sessionFound?: boolean };
+}
 export interface Info { name: "open-katana"; version: string; port: number; pid: number; owner: boolean; features: string[] } // features: "app","runs","decode","templates","heic" (macOS only)
 
 // ---------- events ----------

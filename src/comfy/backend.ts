@@ -330,7 +330,13 @@ function parseEnvelope<T>(stdout: Buffer | undefined): CliEnvelope<T> | undefine
 export function onlyUnlistedModels(e: Error & { code?: string }): boolean {
   if (e.code !== "workflow_unknown_nodes") return false;
   const issues = e.message.split(/node \d+:/).slice(1);
-  return issues.length > 0 && issues.every((i) => /not in \d+ known options for (unet_name|clip_name|clip_name\d|vae_name|lora_name|ckpt_name|model_name)\b/.test(i));
+  // A model file the catalog doesn't list (Comfy Cloud loads many on demand), whatever the input is called:
+  // unet_name, lora_name, ckpt_name, or ModelPatchLoader's plain "name". The pre-check also flags an
+  // empty autogrow input (Qwen-Image 2.1's text encoder in text-to-image mode, as Comfy's own template
+  // runs it); the server is the judge of that, and its error comes back if it disagrees.
+  const unlisted = (i: string) => /'[^']+\.(safetensors|ckpt|pt|pth|onnx|gguf|bin)' not in \d+ known options for \w+/.test(i);
+  const emptyAutogrow = (i: string) => /required autogrow input '[^']+' has no connected slots/.test(i);
+  return issues.length > 0 && issues.every((i) => unlisted(i) || emptyAutogrow(i));
 }
 
 /** Credentials for Comfy Cloud: COMFY_CLOUD_API_KEY, else the comfy CLI's stored API key or sign-in. */

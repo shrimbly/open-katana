@@ -1,6 +1,6 @@
 import { Graph, h3Frames, type Link, sizeForAspect, snap, wanFrames } from "./graph.js";
 
-export const OPERATIONS = ["still.compose", "still.generate", "still.face", "clip.i2v", "clip.r2v", "clip.motion", "clip.flf", "matte"] as const;
+export const OPERATIONS = ["still.compose", "still.generate", "still.face", "clip.i2v", "clip.r2v", "clip.motion", "clip.flf", "matte", "upscale"] as const;
 export type Operation = (typeof OPERATIONS)[number];
 
 export interface ModelFile {
@@ -32,8 +32,16 @@ const M = {
   funHigh: { name: "wan2.2_fun_control_high_noise_14B_fp8_scaled.safetensors", folder: "diffusion_models", url: `${HF}/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_fun_control_high_noise_14B_fp8_scaled.safetensors` },
   funLow: { name: "wan2.2_fun_control_low_noise_14B_fp8_scaled.safetensors", folder: "diffusion_models", url: `${HF}/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_fun_control_low_noise_14B_fp8_scaled.safetensors` },
   fun5b: { name: "wan2.2_fun_control_5B_bf16.safetensors", folder: "diffusion_models", url: `${HF}/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_fun_control_5B_bf16.safetensors` },
+  seedvr2_7bSharp: { name: "seedvr2_7b_sharp_int8_convrot.safetensors", folder: "diffusion_models", url: `${HF}/Comfy-Org/SeedVR2/resolve/main/diffusion_models/seedvr2_7b_sharp_int8_convrot.safetensors` },
+  seedvr2_7b: { name: "seedvr2_7b_int8_convrot.safetensors", folder: "diffusion_models", url: `${HF}/Comfy-Org/SeedVR2/resolve/main/diffusion_models/seedvr2_7b_int8_convrot.safetensors` },
+  seedvr2_3b: { name: "seedvr2_3b_int8_convrot.safetensors", folder: "diffusion_models", url: `${HF}/Comfy-Org/SeedVR2/resolve/main/diffusion_models/seedvr2_3b_int8_convrot.safetensors` },
+  seedvr2Vae: { name: "seedvr2_ema_vae_fp16.safetensors", folder: "vae", url: `${HF}/Comfy-Org/SeedVR2/resolve/main/vae/seedvr2_ema_vae_fp16.safetensors` },
   birefnet: { name: "birefnet.safetensors", folder: "background_removal", url: `${HF}/Comfy-Org/BiRefNet/resolve/main/background_removal/birefnet.safetensors` },
   sdpose: { name: "sdpose_wholebody_fp16.safetensors", folder: "checkpoints", url: `${HF}/Comfy-Org/SDPose/resolve/main/checkpoints/sdpose_wholebody_fp16.safetensors` },
+  marigold: { name: "qwen_image_edit_2509_int8_convrot.safetensors", folder: "diffusion_models", url: `${HF}/Comfy-Org/marigold-v2-0/resolve/main/diffusion_models/qwen_image_edit_2509_int8_convrot.safetensors` },
+  marigoldDepth: { name: "marigold_v2_depth_log_stage2.safetensors", folder: "loras", url: `${HF}/Comfy-Org/marigold-v2-0/resolve/main/loras/marigold_v2_depth_log_stage2.safetensors` },
+  marigoldDepthVae: { name: "marigold_v2_depth_log_stage2_vae.safetensors", folder: "vae", url: `${HF}/Comfy-Org/marigold-v2-0/resolve/main/vae/marigold_v2_depth_log_stage2_vae.safetensors` },
+  marigoldDepthCond: { name: "marigold_v2_depth_conditioning.safetensors", folder: "embeddings", url: `${HF}/Comfy-Org/marigold-v2-0/resolve/main/embeddings/marigold_v2_depth_conditioning.safetensors` },
   da3: { name: "depth_anything_3_mono_large.safetensors", folder: "geometry_estimation", url: `${HF}/Comfy-Org/Depth-Anything-3/resolve/main/geometry_estimation/depth_anything_3_mono_large.safetensors` },
   flux3Klein: { name: "flux3_image_klein_sd_int8_convrot.safetensors", folder: "diffusion_models", url: `${HF}/Comfy-Org/Flux-3-Image/resolve/main/diffusion_models/flux3_image_klein_sd_int8_convrot.safetensors` },
   qwen3vl4b: { name: "qwen3vl_4b_int8_convrot.safetensors", folder: "text_encoders", url: `${HF}/Comfy-Org/Flux-3-Image/resolve/main/text_encoders/qwen3vl_4b_int8_convrot.safetensors` },
@@ -64,6 +72,11 @@ const M = {
   h3Text: { name: "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors", folder: "text_encoders", url: `${HF}/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors` },
   h3Vae: { name: "minimax_h3_video_vae_int8_convrot.safetensors", folder: "vae", url: `${HF}/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_video_vae_int8_convrot.safetensors` },
   h3AudioVae: { name: "minimax_h3_audio_vae_fp32.safetensors", folder: "vae", url: `${HF}/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_audio_vae_fp32.safetensors` },
+  h3FunControl: { name: "minimax_h3_fun_controlnet_union_pruned_int8_convrot.safetensors", folder: "model_patches", url: `${HF}/Comfy-Org/MiniMax-H3/resolve/main/model_patches/minimax_h3_fun_controlnet_union_pruned_int8_convrot.safetensors` },
+  rtDetr: { name: "rt_detr_v4-x-hgnet_fp16.safetensors", folder: "diffusion_models", url: `${HF}/Comfy-Org/SDPose/resolve/main/diffusion_models/rt_detr_v4-x-hgnet_fp16.safetensors` },
+  wanAnimate2: { name: "wan_animate_2_int8_convrot.safetensors", folder: "diffusion_models", url: `${HF}/Comfy-Org/Wan-Animate-2/resolve/main/diffusion_models/wan_animate_2_int8_convrot.safetensors` },
+  wanAnimate2Lora: { name: "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors", folder: "loras", url: `${HF}/Comfy-Org/Wan-Animate-2/resolve/main/loras/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors` },
+  clipVisionH: { name: "clip_vision_h.safetensors", folder: "clip_vision", url: `${HF}/Comfy-Org/Wan-Animate-2/resolve/main/clip_vision/clip_vision_h.safetensors` },
 } satisfies Record<string, ModelFile>;
 
 /** Wan's standard negative prompt (from the official templates), with an English tail for aura edits. */
@@ -95,7 +108,7 @@ const LICENSES = {
     name: "MiniMax H3 Community License",
     url: `${HF}/MiniMaxAI/MiniMax-H3/blob/main/LICENSE`,
     commercial: "restricted",
-    note: "Use of the open weights and their outputs in the United States, European Union, United Kingdom and South Korea is not licensed, whether on your own GPU or on a hosted service such as Comfy Cloud; attribution required; separate authorisation above US$20M annual revenue. MiniMax's own API is under separate terms.",
+    note: "Use of the open weights and their outputs in the United States, European Union, United Kingdom and South Korea is not licensed, whether on your own GPU or on a hosted service such as Comfy Cloud; a product that uses it must show “MiniMax H3” in its interface; separate authorisation above US$20M annual revenue; outputs may not be used to train other models. Comfy states that Comfy Cloud generations include commercial rights: check that this covers your territory. MiniMax's own API is under separate terms.",
   },
   fluxNonCommercial: {
     name: "FLUX Non-Commercial License",
@@ -128,6 +141,11 @@ export interface Profile {
   tier: "quality" | "lite";
   license: License;
   /** Used only when named (a profile override or a job's profile): never picked as a default or fallback. */
+  /**
+   * The control frames this clip.motion profile can follow (any when unset). Wan Animate 2 reads
+   * people's motion straight from the frames, so it can't follow depth or a camera move.
+   */
+  controls?: readonly ("pose" | "depth" | "edges" | "camera")[];
   optIn?: boolean;
   /** Native output frame rate for clip operations. */
   fps?: number;
@@ -221,6 +239,19 @@ export const PROFILES: Profile[] = [
     nodes: ["EmptyFlux2LatentImage", "ConditioningZeroOut"],
     baseSeconds: 8,
     notes: "Location plates and inserts; strong prompt following and text rendering. FLUX Kommunity License (commercial output only under US$5M revenue): used only when named.",
+  },
+  {
+    id: "qwen21",
+    operation: "still.generate",
+    title: "Qwen-Image 2.1 (text to image, full model)",
+    tier: "quality",
+    license: LICENSES.qwenResearch,
+    longSide: 1536,
+    models: [M.qwen21, M.qwen3vl8b, M.qwen21Vae],
+    nodes: ["TextEncodeQwenImage21", "QwenImage21Cache"],
+    baseSeconds: 20,
+    sizeStep: 32,
+    notes: "Location plates (no people) from the same weights as the qwen21-edit keyframes, so plates cost no extra download and match the keyframes' look. Qwen Research License: non-commercial; commercial: true falls back to Z-Image Turbo (Apache-2.0).",
   },
   {
     id: "qwen21-turbo",
@@ -358,7 +389,7 @@ export const PROFILES: Profile[] = [
     models: [M.zImage, M.qwen3_4b, M.aeVae],
     nodes: ["EmptySD3LatentImage", "ModelSamplingAuraFlow"],
     baseSeconds: 4,
-    notes: "8 steps. Use for empty environment plates; never ask it for the hero.",
+    notes: "8 steps, Apache-2.0: the plate model in commercial mode (the default plates come from Qwen-Image 2.1). Use for empty environment plates; never ask it for the hero.",
   },
   {
     id: "wan22-14b-i2v",
@@ -428,47 +459,137 @@ export const PROFILES: Profile[] = [
   {
     id: "minimax-h3-i2v",
     operation: "clip.i2v",
-    title: "MiniMax H3 image-to-video + 8-step turbo",
+    title: "MiniMax H3 image-to-video (full model, 20 steps)",
     tier: "quality",
+    license: LICENSES.minimaxH3,
+    fps: 24,
+    longSide: 1344,
+    models: [M.h3Fl2v, M.h3Text, M.h3Vae, M.h3AudioVae],
+    nodes: ["MiniMaxH3ImageToVideo", "SamplerCustomAdvanced", "BasicGuider", "CreateVideo", "SaveVideo"],
+    baseSeconds: 115,
+    frames: "h3",
+    sizeStep: 32,
+    notes: "The default for clips: 24 fps native, real body motion (full spins, runs), locked close-ups that hold the likeness, and camera work. Renders on H3's native canvas (768×1344 vertical, 1024×768 for 4:3); frames come in steps of 17. A big move where the face turns away (a spin, a turn) belongs on minimax-h3-flf with an end frame, so the face comes back right. Its native audio is not used. MiniMax H3 Community License: no use of the open weights in the US, EU, UK or South Korea, Comfy Cloud included; show “MiniMax H3” in the interface of a product that uses it (see license). Wan 2.2 is the Apache-2.0 alternative.",
+  },
+  {
+    id: "minimax-h3-i2v-turbo",
+    operation: "clip.i2v",
+    title: "MiniMax H3 image-to-video + 8-step turbo",
+    tier: "lite",
     license: LICENSES.minimaxH3,
     fps: 24,
     longSide: 960,
     models: [M.h3Fl2v, M.h3Fl2vTurbo, M.h3Text, M.h3Vae, M.h3AudioVae],
     nodes: ["MiniMaxH3ImageToVideo", "SamplerCustomAdvanced", "BasicGuider", "CreateVideo", "SaveVideo"],
-    baseSeconds: 110,
+    baseSeconds: 28,
     frames: "h3",
     sizeStep: 32,
-    notes: "24 fps native, strong physical motion and camera work; frames come in steps of 17. Its native audio is not used (the edit keeps the reference music). MiniMax H3 Community License: no use of the open weights in the US, EU, UK or South Korea, Comfy Cloud included; attribution required (see license). Wan 2.2 is the Apache-2.0 alternative.",
+    notes: "About 4× faster than the full model with the same motion; small push-ins creep into locked shots and faces are slightly less exact. For drafts and the lite tier. MiniMax H3 Community License: no use of the open weights in the US, EU, UK or South Korea, Comfy Cloud included; show “MiniMax H3” in the interface of a product that uses it (see license). Wan 2.2 is the Apache-2.0 alternative.",
   },
   {
     id: "minimax-h3-flf",
     operation: "clip.flf",
-    title: "MiniMax H3 first/last frame + 8-step turbo",
+    title: "MiniMax H3 first/last frame (full model, 20 steps)",
     tier: "quality",
+    license: LICENSES.minimaxH3,
+    fps: 24,
+    longSide: 1344,
+    models: [M.h3Fl2v, M.h3Text, M.h3Vae, M.h3AudioVae],
+    nodes: ["MiniMaxH3ImageToVideo", "SamplerCustomAdvanced", "BasicGuider", "CreateVideo", "SaveVideo"],
+    baseSeconds: 120,
+    frames: "h3",
+    sizeStep: 32,
+    notes: "Two accepted stills as the first and last frame: spins and turns that end on the right face, morphs and transitions. The turbo variant tends to take a shortcut (a quarter turn) on big moves, so use this one for them. MiniMax H3 Community License: no use of the open weights in the US, EU, UK or South Korea, Comfy Cloud included; show “MiniMax H3” in the interface of a product that uses it (see license). Wan 2.2 is the Apache-2.0 alternative.",
+  },
+  {
+    id: "minimax-h3-flf-turbo",
+    operation: "clip.flf",
+    title: "MiniMax H3 first/last frame + 8-step turbo",
+    tier: "lite",
     license: LICENSES.minimaxH3,
     fps: 24,
     longSide: 960,
     models: [M.h3Fl2v, M.h3Fl2vTurbo, M.h3Text, M.h3Vae, M.h3AudioVae],
     nodes: ["MiniMaxH3ImageToVideo", "SamplerCustomAdvanced", "BasicGuider", "CreateVideo", "SaveVideo"],
-    baseSeconds: 110,
+    baseSeconds: 22,
     frames: "h3",
     sizeStep: 32,
-    notes: "Transitions and morphs between two accepted stills at 24 fps. MiniMax H3 Community License: no use of the open weights in the US, EU, UK or South Korea, Comfy Cloud included; attribution required (see license). Wan 2.2 is the Apache-2.0 alternative.",
+    notes: "Fast first/last-frame transitions for drafts; shortcuts big body moves. MiniMax H3 Community License: no use of the open weights in the US, EU, UK or South Korea, Comfy Cloud included; show “MiniMax H3” in the interface of a product that uses it (see license). Wan 2.2 is the Apache-2.0 alternative.",
   },
   {
     id: "minimax-h3-r2v",
     operation: "clip.r2v",
-    title: "MiniMax H3 reference-to-video (up to 9 references) + 4-step turbo",
+    title: "MiniMax H3 reference-to-video (up to 9 references, full model)",
     tier: "quality",
+    license: LICENSES.minimaxH3,
+    fps: 24,
+    longSide: 1344,
+    models: [M.h3Ref2v, M.h3Text, M.h3Vae, M.h3AudioVae],
+    nodes: ["MiniMaxH3ReferenceToVideo", "MiniMaxH3AddGuide", "SamplerCustomAdvanced", "BasicGuider", "CreateVideo", "SaveVideo"],
+    baseSeconds: 106,
+    frames: "h3",
+    sizeStep: 32,
+    notes: "New shots from reference images (identity, outfit, location) with optional accepted keyframes pinned as the first and last frame. Refer to references as <Picture 1>…<Picture n> in the prompt. Holds identity through turns when given start and end guides. MiniMax H3 Community License: no use of the open weights in the US, EU, UK or South Korea, Comfy Cloud included; show “MiniMax H3” in the interface of a product that uses it (see license). Wan 2.2 is the Apache-2.0 alternative.",
+  },
+  {
+    id: "minimax-h3-r2v-turbo",
+    operation: "clip.r2v",
+    title: "MiniMax H3 reference-to-video + 4-step turbo",
+    tier: "lite",
     license: LICENSES.minimaxH3,
     fps: 24,
     longSide: 960,
     models: [M.h3Ref2v, M.h3Ref2vTurbo, M.h3Text, M.h3Vae, M.h3AudioVae],
     nodes: ["MiniMaxH3ReferenceToVideo", "MiniMaxH3AddGuide", "SamplerCustomAdvanced", "BasicGuider", "CreateVideo", "SaveVideo"],
-    baseSeconds: 95,
+    baseSeconds: 16,
     frames: "h3",
     sizeStep: 32,
-    notes: "New shots from reference images (identity, outfit, location) with an optional accepted keyframe pinned as frame 0. Refer to references as <Picture 1>…<Picture n> in the prompt. MiniMax H3 Community License: no use of the open weights in the US, EU, UK or South Korea, Comfy Cloud included; attribution required (see license).",
+    notes: "Fast reference-to-video for drafts. MiniMax H3 Community License: no use of the open weights in the US, EU, UK or South Korea, Comfy Cloud included; show “MiniMax H3” in the interface of a product that uses it (see license). Wan 2.2 is the Apache-2.0 alternative.",
+  },
+  {
+    id: "minimax-h3-motion",
+    operation: "clip.motion",
+    title: "MiniMax H3 + Fun ControlNet Union (motion from the reference shot)",
+    tier: "quality",
+    license: LICENSES.minimaxH3,
+    fps: 24,
+    longSide: 1024,
+    models: [M.h3Fl2v, M.h3Fl2vTurbo, M.h3FunControl, M.h3Text, M.h3Vae, M.h3AudioVae],
+    nodes: ["MiniMaxH3FunControlNetApply", "ModelPatchLoader", "MiniMaxH3ImageToVideo", "SamplerCustomAdvanced", "BasicGuider", "CreateVideo", "SaveVideo"],
+    baseSeconds: 30,
+    frames: "h3",
+    sizeStep: 32,
+    notes: "Re-performs a reference shot's body motion at its real speed from pose skeletons, opening exactly on the start keyframe (which should already stand in the reference's first pose and framing), with fuller reach than wan-animate2 but a looser copy of the move. Turbo LoRA at 6 steps (tested best for this). Weak spots: the face softens when the body turns away, and the light can flare mid-clip. MiniMax H3 Community License: no use of the open weights in the US, EU, UK or South Korea, Comfy Cloud included; show “MiniMax H3” in the interface of a product that uses it (see license). Wan 2.2 is the Apache-2.0 alternative.",
+  },
+  {
+    id: "minimax-h3-motion-ref",
+    operation: "clip.motion",
+    title: "MiniMax H3 reference-to-video + Fun ControlNet Union (camera and motion from the reference shot)",
+    tier: "quality",
+    license: LICENSES.minimaxH3,
+    fps: 24,
+    longSide: 1024,
+    models: [M.h3Ref2v, M.h3FunControl, M.h3Text, M.h3Vae, M.h3AudioVae],
+    nodes: ["MiniMaxH3FunControlNetApply", "ModelPatchLoader", "MiniMaxH3ReferenceToVideo", "MiniMaxH3AddGuide", "SamplerCustomAdvanced", "BasicGuider", "CreateVideo", "SaveVideo"],
+    baseSeconds: 90,
+    frames: "h3",
+    sizeStep: 32,
+    notes: "For a subject that isn't a person (a car, a product) and for camera moves a still can't fake (orbits, arcs, parallax): the subject's photos as references, the accepted keyframe pinned at frame 0, and the reference shot's depth (`control: \"depth\"`) driving the camera. Lower the control `strength` (about 0.6) when the reference's subject has a different shape, so its geometry doesn't carry over. MiniMax H3 Community License: no use of the open weights in the US, EU, UK or South Korea, Comfy Cloud included; show “MiniMax H3” in the interface of a product that uses it (see license). Wan 2.2 is the Apache-2.0 alternative.",
+  },
+  {
+    id: "wan-animate2",
+    operation: "clip.motion",
+    title: "Wan Animate 2 motion transfer + lightx2v",
+    tier: "quality",
+    license: LICENSES.apache,
+    fps: 24,
+    longSide: 832,
+    models: [M.wanAnimate2, M.wanAnimate2Lora, M.umt5, M.clipVisionH, M.wan21Vae],
+    nodes: ["WanAnimate2ToVideo", "WanAnimate2Cache", "CLIPVisionEncode", "TrimVideoLatent", "SamplerCustom", "CreateVideo", "SaveVideo"],
+    controls: ["pose"],
+    baseSeconds: 55,
+    frames: "wan",
+    notes: "The default for re-performing a reference shot's move (fights, dance, sport): motion straight from the reference frames, no skeleton, the most faithful frame-for-frame copy with clean limbs. The hero image sets identity and outfit; the background comes from the prompt, not the image, so describe the place and light. It can borrow the performer's build (bulkier body) and lighten the clothes. Apache-2.0.",
   },
   {
     id: "birefnet",
@@ -482,6 +603,27 @@ export const PROFILES: Profile[] = [
     baseSeconds: 2,
     notes: "Subject alpha for text-behind-subject and cut-outs: an RGBA still for an image, or a white-on-black mask clip for a video.",
   },
+  ...(
+    [
+      // GPU seconds for 81 frames at 1920×1080 (stills count as one frame's share).
+      ["seedvr2-7b-sharp", "SeedVR2 7B sharp (one-step video and image upscale, crisp detail)", "quality", "seedvr2_7bSharp", 90],
+      ["seedvr2-7b", "SeedVR2 7B (one-step video and image upscale, softer than sharp)", "quality", "seedvr2_7b", 90],
+      ["seedvr2-3b", "SeedVR2 3B (one-step video and image upscale, lighter)", "lite", "seedvr2_3b", 45],
+    ] as const
+  ).map(([id, title, tier, model, baseSeconds]) => ({
+    id,
+    operation: "upscale" as const,
+    title,
+    tier,
+    license: LICENSES.apache,
+    longSide: 1920,
+    // The output keeps the source's shape (even sides), not a 16-pixel grid.
+    sizeStep: 2,
+    models: [M[model], M.seedvr2Vae],
+    nodes: ["SeedVR2Preprocess", "SeedVR2Conditioning", "SeedVR2PostProcessing", "VAEEncodeTiled", "VAEDecodeTiled", "KSampler"],
+    baseSeconds,
+    notes: "The finishing pass: an accepted clip or still made sharp at the delivery size (long side 1920 by default), same frames and timing, colours matched to the source. Apache-2.0.",
+  })),
 ];
 
 /** Valid clip length for a profile, at or above `frames`. */
@@ -504,12 +646,24 @@ export const PREFERENCE: Partial<Record<Operation, { quality: string[]; lite: st
   // Qwen-Image 2.1 gives the best keyframes but is non-commercial; commercial: true skips it for Boogu.
   "still.compose": { quality: ["qwen21-edit", "qwen21-turbo-edit", "boogu-edit", "qwen-edit-2511"], lite: ["qwen21-turbo-edit", "boogu-edit-turbo"] },
   "still.face": { quality: ["face-crop"], lite: ["face-crop"] },
-  "still.generate": { quality: ["z-image-turbo", "ernie-image-turbo"], lite: ["z-image-turbo"] },
+  // Plates from the keyframe model's own weights: no extra download, the same look. Non-commercial, so
+  // commercial: true moves plates to Z-Image Turbo (Apache-2.0), as it moves keyframes to Boogu.
+  "still.generate": { quality: ["qwen21", "z-image-turbo", "ernie-image-turbo"], lite: ["qwen21-turbo", "z-image-turbo"] },
+  // MiniMax H3 beat Wan 2.2 on body motion, locked close-ups and spins in our tests (docs/models.md); Wan stays as the Apache-2.0 fallback.
+  "clip.i2v": { quality: ["minimax-h3-i2v", "wan22-14b-i2v"], lite: ["minimax-h3-i2v-turbo", "wan22-5b-ti2v"] },
+  "clip.flf": { quality: ["minimax-h3-flf", "wan22-14b-flf"], lite: ["minimax-h3-flf-turbo", "wan22-14b-flf"] },
+  "clip.r2v": { quality: ["minimax-h3-r2v"], lite: ["minimax-h3-r2v-turbo"] },
+  // Wan Animate 2 copied the reference's moves most faithfully in our motion tests; H3 pose control is the alternative.
+  "clip.motion": { quality: ["wan-animate2", "minimax-h3-motion", "wan22-14b-fun-control"], lite: ["wan-animate2", "wan22-5b-fun-control"] },
+  // 7B sharp gave the crispest detail on our clips; 3B invents texture (lens fluting) and flickers more.
+  upscale: { quality: ["seedvr2-7b-sharp", "seedvr2-7b", "seedvr2-3b"], lite: ["seedvr2-3b"] },
 };
 
 export interface ProfileFilter {
   /** Leave out non-commercial profiles (config.commercial). Restricted ones stay and are warned about. */
   commercial?: boolean;
+  /** clip.motion: only profiles that can follow this kind of control frames. */
+  control?: "pose" | "depth" | "edges" | "camera";
 }
 
 /** False when the commercial switch is on and the profile's licence is non-commercial. */
@@ -525,7 +679,7 @@ export function licenseAllows(p: Profile, commercial = false): boolean {
 export function defaultProfile(operation: Operation, tier: "quality" | "lite" = "quality", runnable?: (p: Profile) => boolean, filter: ProfileFilter = {}): Profile {
   const preferred = (PREFERENCE[operation]?.[tier] ?? []).map((id) => PROFILES.find((p) => p.id === id)).filter((p): p is Profile => Boolean(p));
   const rest = PROFILES.filter((p) => p.operation === operation && !preferred.includes(p)).sort((a, b) => Number(b.tier === tier) - Number(a.tier === tier));
-  const order = [...preferred, ...rest].filter((p) => !p.optIn && licenseAllows(p, filter.commercial));
+  const order = [...preferred, ...rest].filter((p) => !p.optIn && licenseAllows(p, filter.commercial) && (!filter.control || !p.controls || p.controls.includes(filter.control)));
   const pick = (runnable && order.find(runnable)) || order[0];
   if (!pick) {
     const named = PROFILES.filter((p) => p.operation === operation).map((p) => `${p.id} (${licenseLabel(p.license)})`);
@@ -578,6 +732,10 @@ export interface BuildParams {
    * or "depth" (depth maps in-graph; shape and parallax).
    */
   controlMode?: ControlMode;
+  /** Which model reads depth from the control frames: Marigold V2 (sharper edges, finer surfaces) or Depth Anything 3 (lighter). */
+  depthModel?: DepthModel;
+  /** How hard the control frames steer (1 = fully; depth on a different subject wants about 0.5–0.7). */
+  controlStrength?: number;
   frames?: number;
   /** Frame rate of the output video, for operations that keep their input's rate (video mattes). */
   fps?: number;
@@ -586,10 +744,14 @@ export interface BuildParams {
 
 export const CONTROL_MODES = ["edges", "pose", "depth"] as const;
 export type ControlMode = (typeof CONTROL_MODES)[number];
+export const DEPTH_MODELS = ["marigold", "da3"] as const;
+export type DepthModel = (typeof DEPTH_MODELS)[number];
 
 /** Extra models a clip.motion job needs for in-graph control extraction. */
-export function controlModels(mode: ControlMode): ModelFile[] {
-  return mode === "pose" ? [M.sdpose] : mode === "depth" ? [M.da3] : [];
+export function controlModels(mode: ControlMode, depth: DepthModel = "marigold"): ModelFile[] {
+  if (mode === "pose") return [M.sdpose, M.rtDetr];
+  if (mode === "depth") return depth === "da3" ? [M.da3] : [M.marigold, M.marigoldDepth, M.marigoldDepthVae, M.marigoldDepthCond];
+  return [];
 }
 
 export interface Built {
@@ -973,6 +1135,56 @@ function buildWanTI2V5B(p: BuildParams, prof: Profile): Built {
   return { prompt: g.toJSON(), width, height, frames, fps: prof.fps, outputNode: out };
 }
 
+/**
+ * The control frames for a motion job. LoadImage decodes every frame of an animated WebP into one
+ * IMAGE batch, which works on Comfy Cloud where uploaded videos are not available to LoadVideo.
+ * pose: people are found with RT-DETR first and SDPose reads the skeleton inside each box, so the
+ * driving performer's face, hair and clothes never reach the model. depth: Marigold V2 maps (one
+ * deterministic step of its LoRA on Qwen-Image-Edit 2509, near is bright), or Depth Anything 3 maps.
+ * edges: the frames are already edge maps.
+ */
+function drivingFrames(g: Graph, p: BuildParams): Link {
+  const frames0 = g.link("LoadImage", { image: p.controlImage! });
+  if (p.controlMode === "pose") {
+    const ckpt = g.add("CheckpointLoaderSimple", { ckpt_name: M.sdpose.name });
+    const sized = g.link("ResizeImageMaskNode", { resize_type: "scale longer dimension", scale_method: "lanczos", input: frames0, "resize_type.longer_size": 1024 });
+    const detector = g.link("UNETLoader", { unet_name: M.rtDetr.name, weight_dtype: "default" });
+    const bboxes = g.link("RTDETR_detect", { model: detector, image: sized, threshold: 0.5, class_name: "person", max_detections: 2 });
+    const keypoints = g.link("SDPoseKeypointExtractor", { batch_size: 16, model: [ckpt, 0], vae: [ckpt, 2], image: sized, bboxes });
+    return g.link("SDPoseDrawKeypoints", {
+      draw_body: true, draw_hands: true, draw_face: true, draw_feet: true, draw_head: true,
+      stick_width: 4, face_point_size: 2, score_threshold: 0.5, keypoints,
+    });
+  }
+  if (p.controlMode === "depth" && (p.depthModel ?? "marigold") === "marigold") {
+    const sized = g.link("ResizeImageMaskNode", { resize_type: "scale longer dimension", scale_method: "lanczos", input: frames0, "resize_type.longer_size": 768 });
+    const unet = g.link("UNETLoader", { unet_name: M.marigold.name, weight_dtype: "default" });
+    const lora = g.link("LoraLoaderModelOnly", { lora_name: M.marigoldDepth.name, strength_model: 1, model: unet });
+    const model = g.link("ModelSamplingAuraFlow", { shift: 1.73, sampling: "img_to_img_velocity", model: lora });
+    const vae = g.link("VAELoader", { vae_name: M.marigoldDepthVae.name });
+    const guider = g.link("BasicGuider", { model, conditioning: g.link("ConditioningLoader", { conditioning_name: M.marigoldDepthCond.name }) });
+    const sampled = g.link("SamplerCustomAdvanced", {
+      noise: g.link("DisableNoise", {}), guider, sampler: g.link("KSamplerSelect", { sampler_name: "euler" }),
+      sigmas: g.link("ManualSigmas", { sigmas: "0.5, 0" }), latent_image: g.link("VAEEncode", { pixels: sized, vae }),
+    });
+    return g.link("MarigoldV2PostProcess", { prediction: "depth", image: g.link("VAEDecode", { samples: sampled, vae }) });
+  }
+  if (p.controlMode === "depth") {
+    const model = g.link("LoadDA3Model", { model_name: M.da3.name, weight_dtype: "default" });
+    const geometry = g.link("DA3Inference", { resolution: 504, resize_method: "lower_bound_resize", mode: "mono", da3_model: model, image: frames0 });
+    return g.link("DA3Render", { output: "depth", da3_geometry: geometry, "output.normalization": "v2_style", "output.apply_sky_clip": false });
+  }
+  return frames0;
+}
+
+/** Just the control frames a motion job would see (pose skeletons or depth maps), saved as a video to check them. */
+export function buildControlPreview(p: Pick<BuildParams, "controlImage" | "controlMode" | "depthModel" | "filenamePrefix"> & { fps?: number; kind?: "image" | "video" }): Built {
+  if (!p.controlImage) throw new Error("a control preview needs controlImage");
+  const g = new Graph();
+  const out = save(g, p.kind ?? "video", drivingFrames(g, p as BuildParams), p.filenamePrefix, p.fps ?? 24);
+  return { prompt: g.toJSON(), width: 0, height: 0, frames: 0, fps: p.fps ?? 24, outputNode: out };
+}
+
 function buildFunControl(p: BuildParams, prof: Profile): Built {
   if (!p.startImage) throw new Error("clip.motion needs startImage");
   if (!p.controlImage) throw new Error("clip.motion needs controlImage (animated WebP of control frames)");
@@ -984,24 +1196,7 @@ function buildFunControl(p: BuildParams, prof: Profile): Built {
   const pos = g.link("CLIPTextEncode", { text: p.prompt, clip });
   const neg = g.link("CLIPTextEncode", { text: p.negative ?? WAN_NEGATIVE, clip });
   const start = loadScaled(g, p.startImage, width, height);
-  // LoadImage decodes every frame of an animated WebP into one IMAGE batch, which works on
-  // Comfy Cloud where uploaded videos are not available to LoadVideo.
-  const frames0 = g.link("LoadImage", { image: p.controlImage });
-  let driving: Link = frames0;
-  if (p.controlMode === "pose") {
-    // Skeletons only: the driving performer's face, hair and clothes never reach the model.
-    const ckpt = g.add("CheckpointLoaderSimple", { ckpt_name: M.sdpose.name });
-    const sized = g.link("ResizeImageMaskNode", { resize_type: "scale longer dimension", scale_method: "lanczos", input: frames0, "resize_type.longer_size": 1024 });
-    const keypoints = g.link("SDPoseKeypointExtractor", { batch_size: 16, bboxes: { x: 0, y: 0, width: 512, height: 512 }, model: [ckpt, 0], vae: [ckpt, 2], image: sized });
-    driving = g.link("SDPoseDrawKeypoints", {
-      draw_body: true, draw_hands: true, draw_face: true, draw_feet: true, draw_head: true,
-      stick_width: 4, face_point_size: 2, score_threshold: 0.5, keypoints,
-    });
-  } else if (p.controlMode === "depth") {
-    const model = g.link("LoadDA3Model", { model_name: M.da3.name, weight_dtype: "default" });
-    const geometry = g.link("DA3Inference", { resolution: 504, resize_method: "lower_bound_resize", mode: "mono", da3_model: model, image: frames0 });
-    driving = g.link("DA3Render", { output: "depth", da3_geometry: geometry, "output.normalization": "v2_style", "output.apply_sky_clip": false });
-  }
+  const driving = drivingFrames(g, p);
   const control = g.link("ImageScale", { image: driving, upscale_method: "lanczos", width, height, crop: "center" });
   const cond = g.add("Wan22FunControlToVideo", {
     width, height, length: frames, batch_size: 1, positive: pos, negative: neg, vae, ref_image: start, control_video: control,
@@ -1032,8 +1227,17 @@ interface H3Base {
   frames: number;
 }
 
+/**
+ * H3's native canvas holds about 1 MP: 768×1344 for 9:16 and 16:9, 1024×768 for 4:3 and squarer
+ * shapes. Profiles with a smaller long side (the turbo LoRAs were trained near 544–768p) keep theirs.
+ */
+export function h3LongSide(aspect: number, profileLong: number): number {
+  const native = aspect >= 1.5 || aspect <= 1 / 1.5 ? 1344 : 1024;
+  return Math.min(native, profileLong);
+}
+
 function h3Base(p: BuildParams, prof: Profile, defaultSeconds: number): H3Base {
-  const { width, height } = sizeForAspect(p.aspect, p.longSide ?? prof.longSide, 32);
+  const { width, height } = sizeForAspect(p.aspect, p.longSide ?? h3LongSide(p.aspect, prof.longSide), 32);
   const frames = h3Frames(p.frames ?? Math.round(defaultSeconds * 24));
   const g = new Graph();
   const clip = g.link("CLIPLoader", { clip_name: M.h3Text.name, type: "minimax", device: "default" });
@@ -1054,22 +1258,122 @@ function h3Sample(b: H3Base, model: Link, conditioning: Link, latent: Link, seed
   return save(g, "video", decoded, prefix, 24);
 }
 
-/** H3 first-frame (and optional last-frame) to video with the 8-step turbo LoRA. */
+/** True for the profiles that run H3 with a turbo LoRA. */
+function h3Turbo(prof: Profile): boolean {
+  return prof.models.includes(M.h3Fl2vTurbo) || prof.models.includes(M.h3Ref2vTurbo);
+}
+
+/** H3 first-frame (and optional last-frame) to video: the full model at 20 steps, or the 8-step turbo LoRA at 8. */
 function buildH3Frames(p: BuildParams, prof: Profile, needEnd: boolean): Built {
   if (!p.startImage) throw new Error(`${prof.operation} needs startImage`);
   if (needEnd && !p.endImage) throw new Error("clip.flf needs endImage");
   const b = h3Base(p, prof, 2);
   const { g } = b;
   const unet = g.link("UNETLoader", { unet_name: M.h3Fl2v.name, weight_dtype: "default" });
-  const model = g.link("LoraLoaderModelOnly", { lora_name: M.h3Fl2vTurbo.name, strength_model: 1, model: unet });
+  const turbo = h3Turbo(prof);
+  const model = turbo ? g.link("LoraLoaderModelOnly", { lora_name: M.h3Fl2vTurbo.name, strength_model: 1, model: unet }) : unet;
   const first = loadScaled(g, p.startImage, b.width, b.height);
   const last = p.endImage ? loadScaled(g, p.endImage, b.width, b.height) : undefined;
   const cond = g.add("MiniMaxH3ImageToVideo", {
     clip: b.clip, vae: b.vae, prompt: p.prompt, width: b.width, height: b.height, length: b.frames,
     first_frame: first, ...(last ? { last_frame: last } : {}),
   });
+  const out = h3Sample(b, model, [cond, 0], [cond, 1], p.seed, turbo ? 8 : 20, p.filenamePrefix);
+  return { prompt: g.toJSON(), width: b.width, height: b.height, frames: b.frames, fps: 24, outputNode: out };
+}
+
+/**
+ * H3 motion transfer: the Fun ControlNet Union patch steers the first-frame model with control
+ * frames from the reference shot (pose skeletons by default), so the hero re-performs that exact
+ * move at its real speed. Turbo LoRA at 6 steps: as good as 20 steps here, with crisper hands.
+ */
+function buildH3Motion(p: BuildParams, prof: Profile): Built {
+  if (!p.startImage) throw new Error("clip.motion needs startImage");
+  if (!p.controlImage) throw new Error("clip.motion needs controlImage (animated WebP of control frames)");
+  const b = h3Base(p, prof, 2);
+  const { g } = b;
+  const unet = g.link("UNETLoader", { unet_name: M.h3Fl2v.name, weight_dtype: "default" });
+  const turbo = g.link("LoraLoaderModelOnly", { lora_name: M.h3Fl2vTurbo.name, strength_model: 1, model: unet });
+  const patch = g.link("ModelPatchLoader", { name: M.h3FunControl.name });
+  const control = g.link("ImageScale", { image: drivingFrames(g, p), upscale_method: "lanczos", width: b.width, height: b.height, crop: "center" });
+  const model = g.link("MiniMaxH3FunControlNetApply", { model: turbo, model_patch: patch, vae: b.vae, strength: p.controlStrength ?? 1, start_percent: 0, end_percent: 1, control_video: control });
+  const first = loadScaled(g, p.startImage, b.width, b.height);
+  const cond = g.add("MiniMaxH3ImageToVideo", {
+    clip: b.clip, vae: b.vae, prompt: p.prompt, width: b.width, height: b.height, length: b.frames, first_frame: first,
+  });
   const out = h3Sample(b, model, [cond, 0], [cond, 1], p.seed, 6, p.filenamePrefix);
   return { prompt: g.toJSON(), width: b.width, height: b.height, frames: b.frames, fps: 24, outputNode: out };
+}
+
+/**
+ * H3 reference-to-video steered by control frames: the subject's reference photos (a car from every
+ * angle, a product) keep its shape and details, the start keyframe is pinned at frame 0, and the
+ * reference shot's depth (or pose) drives the camera, so orbits and arcs come out with real parallax.
+ */
+function buildH3MotionRef(p: BuildParams, prof: Profile): Built {
+  const refs = (p.images ?? []).slice(0, 9);
+  if (!refs.length && !p.startImage) throw new Error("clip.motion with references needs reference images (and/or a startImage)");
+  if (!p.controlImage) throw new Error("clip.motion needs controlImage (animated WebP of control frames)");
+  const b = h3Base(p, prof, 2);
+  const { g } = b;
+  const unet = g.link("UNETLoader", { unet_name: M.h3Ref2v.name, weight_dtype: "default" });
+  const patch = g.link("ModelPatchLoader", { name: M.h3FunControl.name });
+  const control = g.link("ImageScale", { image: drivingFrames(g, p), upscale_method: "lanczos", width: b.width, height: b.height, crop: "center" });
+  const model = g.link("MiniMaxH3FunControlNetApply", { model: unet, model_patch: patch, vae: b.vae, strength: p.controlStrength ?? 1, start_percent: 0, end_percent: 1, control_video: control });
+  const refInputs: Record<string, Link> = {};
+  refs.forEach((name, i) => {
+    refInputs[`ref_images.ref_image_${i}`] = g.link("LoadImage", { image: name });
+  });
+  const cond = g.add("MiniMaxH3ReferenceToVideo", {
+    clip: b.clip, prompt: p.prompt, width: b.width, height: b.height, length: b.frames, ref_image_size: "match", vae: b.vae, audio_vae: b.audioVae, ...refInputs,
+  });
+  let positive: Link = [cond, 0];
+  if (p.startImage) positive = g.link("MiniMaxH3AddGuide", { positive, latent: [cond, 1], frame_idx: 0, vae: b.vae, audio_vae: b.audioVae, image: loadScaled(g, p.startImage, b.width, b.height) });
+  if (p.endImage) positive = g.link("MiniMaxH3AddGuide", { positive, latent: [cond, 1], frame_idx: b.frames - 1, vae: b.vae, audio_vae: b.audioVae, image: loadScaled(g, p.endImage, b.width, b.height) });
+  const out = h3Sample(b, model, positive, [cond, 1], p.seed, 20, p.filenamePrefix);
+  return { prompt: g.toJSON(), width: b.width, height: b.height, frames: b.frames, fps: 24, outputNode: out };
+}
+
+/**
+ * Wan Animate 2: motion straight from the reference frames (no skeleton) onto the hero image, in one
+ * pass for clips up to 81 frames. The prompt describes the hero and the place; the same text steers
+ * the motion branch. The hero image is the identity reference, not a first frame.
+ */
+function buildWanAnimate2(p: BuildParams, prof: Profile): Built {
+  const hero = p.startImage ?? p.images?.[0];
+  if (!hero) throw new Error("clip.motion needs startImage (the hero image)");
+  if (!p.controlImage) throw new Error("clip.motion needs controlImage (animated WebP of the reference frames)");
+  const { width, height } = sizeForAspect(p.aspect, p.longSide ?? prof.longSide);
+  const frames = wanFrames(Math.min(81, p.frames ?? 33));
+  const g = new Graph();
+  const unet = g.link("UNETLoader", { unet_name: M.wanAnimate2.name, weight_dtype: "default" });
+  const lora = g.link("LoraLoaderModelOnly", { lora_name: M.wanAnimate2Lora.name, strength_model: 1, model: unet });
+  const cached = g.link("WanAnimate2Cache", { device: "gpu", dtype: "int8", model: lora });
+  const clip = g.link("CLIPLoader", { clip_name: M.umt5.name, type: "wan", device: "default" });
+  const vision = g.link("CLIPVisionLoader", { clip_name: M.clipVisionH.name });
+  const vae = g.link("VAELoader", { vae_name: M.wan21Vae.name });
+  const pos = g.link("CLIPTextEncode", { text: p.prompt, clip });
+  const neg = g.link("CLIPTextEncode", { text: p.negative ?? WAN_NEGATIVE, clip });
+  const heroImg = loadScaled(g, hero, width, height);
+  const driving = g.link("ImageScale", { image: g.link("LoadImage", { image: p.controlImage }), upscale_method: "lanczos", width, height, crop: "center" });
+  const firstDriving = g.link("ImageFromBatch", { batch_index: 0, length: 1, image: driving });
+  const heroVision = g.link("CLIPVisionEncode", { crop: "none", clip_vision: vision, image: heroImg });
+  const poseVision = g.link("CLIPVisionEncode", { crop: "none", clip_vision: vision, image: firstDriving });
+  const cond = g.add("WanAnimate2ToVideo", {
+    batch_size: 1, pose_strength: 1, pose_start_percent: 0, pose_end_percent: 1, reference_image_strength: 1,
+    positive: pos, negative: neg, vae, width, height, length: frames, video_frame_offset: 0,
+    reference_image: heroImg, pose_video: driving, clip_vision_output: heroVision, positive_pose: pos, clip_vision_output_pose: poseVision,
+  });
+  const sigmas = g.link("BasicScheduler", { scheduler: "simple", steps: 6, denoise: 1, model: cached });
+  const model = g.link("ModelSamplingSD3", { shift: 5, model: cached });
+  const sampler = g.link("KSamplerSelect", { sampler_name: "lcm" });
+  const sampled = g.link("SamplerCustom", {
+    add_noise: true, noise_seed: p.seed, cfg: 1, model, positive: [cond, 0], negative: [cond, 1], sampler, sigmas, latent_image: [cond, 2],
+  });
+  const trimmed = g.link("TrimVideoLatent", { samples: sampled, trim_amount: [cond, 3] });
+  const decoded = g.link("VAEDecode", { samples: trimmed, vae });
+  const out = save(g, "video", decoded, p.filenamePrefix, prof.fps);
+  return { prompt: g.toJSON(), width, height, frames, fps: prof.fps, outputNode: out };
 }
 
 /**
@@ -1082,7 +1386,8 @@ function buildH3Reference(p: BuildParams, prof: Profile): Built {
   const b = h3Base(p, prof, 2);
   const { g } = b;
   const unet = g.link("UNETLoader", { unet_name: M.h3Ref2v.name, weight_dtype: "default" });
-  const model = g.link("LoraLoaderModelOnly", { lora_name: M.h3Ref2vTurbo.name, strength_model: 1, model: unet });
+  const turbo = h3Turbo(prof);
+  const model = turbo ? g.link("LoraLoaderModelOnly", { lora_name: M.h3Ref2vTurbo.name, strength_model: 1, model: unet }) : unet;
   const refInputs: Record<string, Link> = {};
   refs.forEach((name, i) => {
     refInputs[`ref_images.ref_image_${i}`] = g.link("LoadImage", { image: name });
@@ -1100,8 +1405,37 @@ function buildH3Reference(p: BuildParams, prof: Profile): Built {
     const end = loadScaled(g, p.endImage, b.width, b.height);
     positive = g.link("MiniMaxH3AddGuide", { positive, latent: [cond, 1], frame_idx: b.frames - 1, vae: b.vae, audio_vae: b.audioVae, image: end });
   }
-  const out = h3Sample(b, model, positive, [cond, 1], p.seed, 4, p.filenamePrefix);
+  const out = h3Sample(b, model, positive, [cond, 1], p.seed, turbo ? 4 : 20, p.filenamePrefix);
   return { prompt: g.toJSON(), width: b.width, height: b.height, frames: b.frames, fps: 24, outputNode: out };
+}
+
+/**
+ * SeedVR2 upscale (the core-node graph of Comfy's SeedVR2 template): the source scaled to the target
+ * size, one diffusion step that restores detail, then colour matched back to the scaled source (lab).
+ * A clip arrives as an animated WebP of all its frames (controlImage) and leaves at its own rate.
+ */
+function buildUpscale(p: BuildParams, prof: Profile): Built {
+  const source = p.controlImage ?? p.startImage ?? p.images?.[0];
+  if (!source) throw new Error("upscale needs a clip or an image");
+  const model = prof.models[0]!.name;
+  const g = new Graph();
+  const loaded = g.link("LoadImage", { image: source });
+  const resized = g.link("ResizeImageMaskNode", { resize_type: "scale longer dimension", scale_method: "lanczos", input: loaded, "resize_type.longer_size": p.longSide ?? prof.longSide });
+  const vae = g.link("VAELoader", { vae_name: M.seedvr2Vae.name });
+  const unet = g.link("UNETLoader", { unet_name: model, weight_dtype: "default" });
+  const tiles = { tile_size: 512, overlap: 128, temporal_size: 64, temporal_overlap: 8 };
+  const latent = g.link("VAEEncodeTiled", { pixels: g.link("SeedVR2Preprocess", { resized_images: resized }), vae, ...tiles });
+  const cond = g.add("SeedVR2Conditioning", { model: unet, vae_conditioning: latent });
+  const sampled = g.link("KSampler", {
+    model: unet, positive: [cond, 0], negative: [cond, 1], latent_image: latent,
+    seed: p.seed, steps: 1, cfg: 1, sampler_name: "euler", scheduler: "simple", denoise: 1,
+  });
+  const decoded = g.link("VAEDecodeTiled", { samples: sampled, vae, ...tiles });
+  const out = g.link("SeedVR2PostProcessing", { images: decoded, original_resized_images: resized, color_correction_method: "lab" });
+  // The long side is exact; the short side follows the source's shape.
+  const { width, height } = sizeForAspect(p.aspect, p.longSide ?? prof.longSide, 2);
+  if (p.controlImage) return { prompt: g.toJSON(), width, height, frames: p.frames, fps: p.fps, outputNode: save(g, "video", out, p.filenamePrefix, p.fps ?? 24) };
+  return { prompt: g.toJSON(), width, height, outputNode: save(g, "image", out, p.filenamePrefix) };
 }
 
 function buildMatte(p: BuildParams): Built {
@@ -1162,6 +1496,8 @@ export function build(profileId: string, params: BuildParams): Built {
       return buildFaceCrop(params);
     case "qwen21-turbo":
       return buildQwen21(params, prof, false);
+    case "qwen21":
+      return buildQwen21(params, prof, false, false);
     case "z-image-turbo":
       return buildZImage(params, prof);
     case "wan22-14b-i2v":
@@ -1174,13 +1510,26 @@ export function build(profileId: string, params: BuildParams): Built {
     case "wan22-14b-flf":
       return buildWanFLF(params, prof);
     case "minimax-h3-i2v":
+    case "minimax-h3-i2v-turbo":
       return buildH3Frames(params, prof, false);
     case "minimax-h3-flf":
+    case "minimax-h3-flf-turbo":
       return buildH3Frames(params, prof, true);
     case "minimax-h3-r2v":
+    case "minimax-h3-r2v-turbo":
       return buildH3Reference(params, prof);
+    case "minimax-h3-motion":
+      return buildH3Motion(params, prof);
+    case "minimax-h3-motion-ref":
+      return buildH3MotionRef(params, prof);
+    case "wan-animate2":
+      return buildWanAnimate2(params, prof);
     case "birefnet":
       return buildMatte(params);
+    case "seedvr2-7b-sharp":
+    case "seedvr2-7b":
+    case "seedvr2-3b":
+      return buildUpscale(params, prof);
     default:
       throw new Error(`No builder for profile ${prof.id}`);
   }
@@ -1191,5 +1540,6 @@ export function estimateSeconds(profileId: string, opts: { width: number; height
   const prof = profile(profileId);
   const pixelScale = (opts.width * opts.height) / (prof.longSide * snap(prof.longSide * 0.5625));
   const frameScale = opts.frames ? opts.frames / 81 : 1;
-  return Math.max(2, Math.round(prof.baseSeconds * Math.max(0.25, pixelScale) * (prof.operation.startsWith("clip") ? Math.max(0.3, frameScale) : 1)));
+  const perFrames = prof.operation.startsWith("clip") ? Math.max(0.3, frameScale) : prof.operation === "upscale" ? (opts.frames ? frameScale : 1 / 20) : 1;
+  return Math.max(2, Math.round(prof.baseSeconds * Math.max(0.25, pixelScale) * perFrames));
 }

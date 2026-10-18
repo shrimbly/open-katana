@@ -44,11 +44,11 @@ const BACKENDS: Record<string, Config["backend"]> = {
   "comfy-cli": { kind: "comfy-cli", where: "cloud" },
 };
 
-/** GPU minutes [low, high] and line count per preset and backend, measured when the maths was unified (D45). */
+/** GPU minutes [low, high] and line count per preset and backend, with the MiniMax H3 clip defaults (full model, native canvas) and the SeedVR2 upscale of every shot. */
 const EXPECTED: Record<string, Record<string, [number, number, number]>> = {
-  http: { "cold-stare": [11.7, 15.8, 12], "golden-hour": [17.6, 23.7, 18], "hype-energy": [22.1, 29.9, 25], "iron-mindset": [30, 40.5, 29], "neon-rain": [17.6, 23.7, 18], "night-stare": [25.7, 34.7, 23], "phonk-velocity": [15.6, 21.1, 16] },
-  cloud: { "cold-stare": [16.5, 22.3, 12], "golden-hour": [24.8, 33.4, 18], "hype-energy": [31.5, 42.5, 25], "iron-mindset": [41, 55.3, 29], "neon-rain": [24.8, 33.4, 18], "night-stare": [34.7, 46.8, 23], "phonk-velocity": [22, 29.7, 16] },
-  "comfy-cli": { "cold-stare": [18.5, 25, 12], "golden-hour": [27.8, 37.5, 18], "hype-energy": [35.4, 47.8, 25], "iron-mindset": [45.6, 61.5, 29], "neon-rain": [27.8, 37.5, 18], "night-stare": [38.4, 51.9, 23], "phonk-velocity": [24.7, 33.3, 16] },
+  http: { "cold-stare": [26.1, 35.2, 18], "golden-hour": [39.1, 52.9, 27], "hype-energy": [51.6, 69.7, 36], "iron-mindset": [68, 91.8, 42], "neon-rain": [39.1, 52.9, 27], "night-stare": [36, 48.6, 35], "phonk-velocity": [34.8, 47, 24] },
+  cloud: { "cold-stare": [32.1, 43.3, 18], "golden-hour": [48.2, 65, 27], "hype-energy": [63.3, 85.4, 36], "iron-mindset": [81.6, 110.1, 42], "neon-rain": [48.2, 65, 27], "night-stare": [47.4, 63.9, 35], "phonk-velocity": [42.8, 57.8, 24] },
+  "comfy-cli": { "cold-stare": [34.6, 46.7, 18], "golden-hour": [51.9, 70.1, 27], "hype-energy": [68.1, 91.9, 36], "iron-mindset": [87.2, 117.8, 42], "neon-rain": [51.9, 70.1, 27], "night-stare": [52.1, 70.4, 35], "phonk-velocity": [46.1, 62.3, 24] },
 };
 
 const cfgOf = (backend: Config["backend"], over: Partial<Config> = {}) => ConfigSchema.parse({ backend, ...over });
@@ -95,19 +95,22 @@ describe("estimates before any agent runs", () => {
     const byLine = new Map(e.jobs.map((j) => [j.line, j]));
     expect(byLine.get("face")).toMatchObject({ operation: "still.face", takes: 1 });
     expect(byLine.get("temple-key")).toMatchObject({ operation: "still.compose", takes: 3, profile: "qwen21-edit" });
-    expect(byLine.get("temple")).toMatchObject({ operation: "clip.i2v", takes: 1, profile: "wan22-14b-i2v" });
+    expect(byLine.get("temple")).toMatchObject({ operation: "clip.i2v", takes: 1, profile: "minimax-h3-i2v" });
     expect(byLine.get("spin-matte")).toMatchObject({ operation: "matte", videoSec: byLine.get("spin")!.videoSec });
     for (const j of e.jobs.filter((x) => x.operation.startsWith("clip."))) {
       expect(j.videoSec! % 0.5).toBe(0);
       expect(j.videoSec).toBeGreaterThanOrEqual(1);
       expect(j.videoSec).toBeLessThanOrEqual(10);
     }
-    expect(e.groups.map((g) => g.label)).toEqual(["Keyframes", "Face crop", "Clips", "Cut-outs", "Queueing"]);
+    expect(e.groups.map((g) => g.label)).toEqual(["Keyframes", "Face crop", "Clips", "Cut-outs", "Upscale", "Queueing"]);
+    // Every shot of the cut is upscaled for the final render: each clip, at its own length.
+    for (const c of e.jobs.filter((x) => x.operation.startsWith("clip."))) expect(byLine.get(`up-${c.line}`)).toMatchObject({ operation: "upscale", profile: "seedvr2-7b-sharp", videoSec: c.videoSec });
+    expect(byLine.has("up-temple-key")).toBe(false);
     const iron = (await estimate(draft({ template: "iron-mindset" }))).estimate;
     expect(iron.jobs.find((j) => j.line === "action")).toMatchObject({ operation: "clip.r2v", profile: "minimax-h3-r2v" });
     const neon = (await estimate(draft({ template: "neon-rain" }))).estimate;
     expect(neon.basis).toBe("recipe");
-    expect(neon.jobs.every((j) => (j.operation === "still.compose" && j.takes === 3) || (j.operation === "clip.i2v" && j.videoSec === 3))).toBe(true);
+    expect(neon.jobs.every((j) => (j.operation === "still.compose" && j.takes === 3) || ((j.operation === "clip.i2v" || j.operation === "upscale") && j.videoSec === 3))).toBe(true);
   });
 
   it("uses the same budget maths as katana_plan for the same lines", async () => {
@@ -146,18 +149,23 @@ describe("estimates before any agent runs", () => {
   });
 
   it("Use Wan 2.2 for clips removes the MiniMax H3 licence note", async () => {
-    const h3 = cfgOf(BACKENDS.http, { profiles: { "clip.i2v": "minimax-h3-i2v" } });
-    const configured = (await estimate(draft(), h3)).estimate;
+    // MiniMax H3 is the clip default, so its licence note shows with no profile configured.
+    const configured = (await estimate(draft())).estimate;
     expect(configured.canUseWan22).toBe(true);
     expect(configured.licences.map((l) => l.profile)).toContain("minimax-h3-i2v");
     const note = configured.licences.find((l) => l.profile === "minimax-h3-i2v")!;
-    expect(note).toMatchObject({ title: "MiniMax H3", role: "clips", commercial: "restricted", note: "not licensed for use in the US, EU, UK or South Korea, on your own GPU or on Comfy Cloud; attribution required." });
-    const wan = (await estimate(draft({ clipsModel: "wan22" }), h3)).estimate;
+    expect(note).toMatchObject({ title: "MiniMax H3", role: "clips", commercial: "restricted" });
+    const wan = (await estimate(draft({ clipsModel: "wan22" }))).estimate;
     expect(wan.canUseWan22).toBe(false);
     expect(wan.licences.some((l) => l.profile.startsWith("minimax-h3"))).toBe(false);
     expect(wan.jobs.find((j) => j.line === "temple")!.profile).toBe("wan22-14b-i2v");
-    const a = await analyzeDraft(draft({ clipsModel: "wan22" }), { setup: SETUP, cfg: h3 });
-    expect(a.overrides).toEqual({ "clip.i2v": null, "clip.flf": null });
+    const a = await analyzeDraft(draft({ clipsModel: "wan22" }), { setup: SETUP, cfg: cfgOf(BACKENDS.http) });
+    expect(a.overrides).toEqual({ "clip.i2v": "wan22-14b-i2v", "clip.flf": "wan22-14b-flf", "clip.motion": "wan-animate2" });
+    expect(a.promptInput.apacheClips).toBe(true);
+    // Wan has no reference-to-video: those slots are planned as image-to-video.
+    const iron = (await estimate(draft({ template: "iron-mindset", clipsModel: "wan22" }))).estimate;
+    expect(iron.jobs.some((j) => j.operation === "clip.r2v")).toBe(false);
+    expect(iron.jobs.filter((j) => j.operation.startsWith("clip.")).every((j) => j.profile.startsWith("wan"))).toBe(true);
   });
 
   it("paid or commercial work moves keyframes to Boogu Image Edit", async () => {
@@ -186,7 +194,7 @@ describe("estimates before any agent runs", () => {
     await ws.writeJson("app.json", { v: 1, origin: { kind: "decode", sourceName: "my-fav-edit.mp4" }, runs: [], createdAt: "2026-10-17T10:00:00.000Z" });
     const remix = await estimateDraft({ ...draft({ kind: "decode", project: ws.project.id, musicChoice: "original" }), template: undefined });
     expect(remix.estimate.basis).toBe("decode");
-    expect(remix.estimate.jobs).toHaveLength(2 * 10);
+    expect(remix.estimate.jobs).toHaveLength(3 * 10);
     expect(remix.estimate.jobs.filter((j) => j.operation === "clip.i2v").every((j) => j.videoSec === 1.5)).toBe(true);
     expect(remix.estimate.claude).toMatchObject({ lowUsd: 6.5, highUsd: 11.5 });
     expect(remix.estimate.warnings.map((w) => w.code)).toContain("LONG_EDIT");
@@ -194,7 +202,7 @@ describe("estimates before any agent runs", () => {
     expect(remix.prompt).toContain('REFERENCE: asset ref ("my-fav-edit.mp4", 34 s)');
     expect(remix.prompt).toContain("WORDS: none given.");
     const recreate = await analyzeDraft({ ...draft({ kind: "decode", project: ws.project.id, musicChoice: "original", mode: "recreate" }), template: undefined }, { setup: SETUP, cfg: cfgOf(BACKENDS.http) });
-    expect(recreate.estimate.jobs).toHaveLength(2 * 14);
+    expect(recreate.estimate.jobs).toHaveLength(3 * 14);
   });
 
   it("previews the exact first prompt with the template's words", async () => {
@@ -216,7 +224,7 @@ describe("the person's track on a freestyle template", () => {
     const { estimate: e, fit } = await estimate(draft({ template: "golden-hour", music: `${ws.project.id}:music` }));
     expect(fit?.durationSec).toBe(14);
     expect(fit?.offsetSec).toBe(0);
-    expect(e.jobs).toHaveLength(18);
+    expect(e.jobs).toHaveLength(27);
     expect(e.warnings.map((w) => w.code)).not.toContain("TRACK_SHORT");
   });
 });

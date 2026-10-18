@@ -25,7 +25,7 @@ describe("the director's command line", () => {
     expect(value(args, "--append-system-prompt")).toBe("SYSTEM");
     const allowed = value(args, "--allowedTools")!.split(" ");
     expect(allowed).toEqual(ALLOWED_TOOLS);
-    expect(allowed).toHaveLength(13);
+    expect(allowed).toHaveLength(14);
     expect(allowed.every((t) => t.startsWith("mcp__open-katana__katana_"))).toBe(true);
     for (const banned of ["katana_start", "katana_import", "katana_studio", "katana_presets", "katana_preset_save", "katana_upload", "katana_cancel"]) expect(allowed).not.toContain(`mcp__open-katana__${banned}`);
   });

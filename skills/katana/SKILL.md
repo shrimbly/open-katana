@@ -50,6 +50,16 @@ Stop only for the spend approval, a missing required input, or a failure you can
    effects (flashes, glitches, speed ramps, freezes, inserts), and audio events. Correct the
    detector: list missed cuts, false cuts (glow pulses, flashes) and one-frame inserts.
    Generation is refused until every page is logged.
+4. **Mark the hard moves.** While reading, note every shot whose body motion is fast or complex
+   (punches, kicks, dance steps, tricks, sport, a sprint, a fall, a fight) with its exact start and
+   end time and where the performer sits in the frame. A prompt alone softens these into slow
+   generic motion; they get the `motion` route (re-performed from that exact shot, see step 5).
+5. **Name every camera move.** For each shot, write what the camera does over its length: locked
+   off, push-in or pull-out, orbit left or right around the subject, arc over or under it, crane,
+   handheld drift. Judge orbits by parallax between the first and last frames: the subject stays
+   framed while what is behind it slides (the background slides the way the camera travels; things
+   in front of the subject slide the other way). Estimate the size: a slow gimbal orbit on a detail
+   shot is about 5–10° per second. Orbits, arcs and push-ins with parallax get the `camera` route.
 
 Detectors propose; you decide. Never claim to have watched frames you did not open.
 
@@ -66,7 +76,11 @@ Call `katana_plan` with:
   - `graphic` — solid colour / text card / flash frame, made in the edit,
   - `still` — an accepted keyframe animated only by camera work in the edit (great for fast cuts),
   - `i2v` — keyframe → generated clip (slow-motion hero moments, hair, cloth, small actions),
-  - `motion` — keyframe + the motion of a reference shot (`pose` control for people),
+  - `motion` — keyframe + the motion of a reference shot at its real speed (`pose` control for
+    people): every hard move you marked in step 2,
+  - `camera` — keyframe moved by a real camera move (orbit, arc, push-in with parallax) built from
+    the keyframe's own depth: every orbit, arc or travelling push you named in step 2. A still with
+    a zoom can't show parallax, so never stand it in for one of these,
   - `flf` — morph/transition between two keyframes.
 - `jobs`: the generation lines (see "Generation") needed by those shots, nothing more.
 - `energy`: how the reference's cuts, flashes, shake, camera moves and hits map onto the new
@@ -127,7 +141,41 @@ Likeness comes from the identity images, not the reference: the default keyframe
    hero in more naturally than Qwen-Image 2.1, which tends to paste.
 4. **Clips.** Submit one representative clip, inspect its sheet, then submit the rest in one
    `katana_generate` call. Generate 2–4 s per shot so the edit can choose the in-point; never more
-   than the shot needs plus a margin.
+   than the shot needs plus a margin. A spin, a turn or any move where the face leaves the camera
+   and comes back goes on `clip.flf` with a start and an end keyframe (both facing the lens), so the
+   face returns as the person instead of being re-invented.
+   **Motion shots** (the hard moves from step 2), in two lines:
+   - `<shot>-key`: a `still.compose` keyframe of the hero already in the reference's first pose
+     and framing: images `[photo, "@face", "ref@f<first frame of the shot>"]`, with the prompt
+     saying that only the body pose and framing come from image 3, never the person ("…stand in
+     exactly the pose, position and framing of the figure in image 3 (only the pose and framing come
+     from image 3)…"), plus your own place, light and wardrobe. This is the one place a reference
+     frame with a person is allowed; the identity panel catches any leak (reject it and re-roll).
+   - `<shot>`: `clip.motion` with `start: "@<shot>-key"` and `motion: { startSec, endSec, control:
+     "pose" }` from the reference. `fit` defaults to `"realtime"`: the clip moves at the reference's
+     speed and any extra frames replay the move backwards, so use only its first `endSec − startSec`
+     seconds in the edit. When the performer is small in the frame (under about a third of its
+     height: a scope, a wide shot), add `crop: { x, y, w, h }` (fractions of the frame) around them
+     so the skeleton is read cleanly. The crop becomes the generated framing, so make the keyframe
+     at that tighter framing too, and in the edit scale or mask the clip back to the shot's size. Prompt the action and its speed ("fast sharp jabs and
+     crosses, quick weight shifts, real-time speed") and keep the place and light from the keyframe.
+     The default `wan-animate2` copies the move most faithfully frame for frame; it takes identity
+     and outfit from the keyframe but the background from the prompt, so describe the place and
+     light in words, and check the hero's build (it can borrow the performer's bulk). Name
+     `minimax-h3-motion` when the clip must open exactly on the keyframe or needs fuller reach.
+     `fit: "stretch"` is only for a deliberate slow-motion beat.
+   **Camera shots** (orbits, arcs, push-ins from step 2): `clip.motion` with `start: "@<shot>-key"`
+   and `camera: { orbit, arc, push }` instead of `motion`. `orbit` is degrees around the subject
+   (positive to the camera's right, negative to its left), `arc` degrees over (positive) or under it,
+   `push` the fraction of the distance travelled toward it (negative pulls back). The move runs over
+   the whole clip, so size it for the clip's length (`durationSec`): a reference shot that orbits 6°
+   in 1.2 s wants about `orbit: 8` on a 1.6 s clip. Keep `ease: "linear"` for cut-in shots (the move is
+   already under way) and `"ease"` for a shot that starts or ends on a hold. The app reads the
+   keyframe's depth with Marigold V2 and re-renders it along the move, so the clip keeps the
+   keyframe's exact shapes and the parallax is real; never take the depth from another subject's
+   footage (the clip snaps to that subject's shapes or cuts away). Frame the keyframe the way the
+   reference shot opens. Prompt the move ("a slow smooth orbit to the left around …, the background
+   sliding behind it") and what stays still.
 5. `katana_wait` returns finished outputs with review sheets. Look at every sheet. Judge each
    clip and record bad ranges (warped hands, face drift, merged bodies, stray text) so the edit
    avoids them. One corrective retry per failed clip.
@@ -177,7 +225,13 @@ Then `katana_render` with `preview: true`. It returns a frame sheet and an **ene
 the reference. Fix every failing measure in the EDL (more cuts on beats, more flashes, camera work)
 before the final render.
 
-### 7. Verify and deliver
+### 7. Upscale, verify and deliver
+
+Once the preview passes and the cut won't change, `katana_upscale` (`approved: true`, the default
+`longSide: 1920` for 1080p) makes a SeedVR2 copy of every generated clip and still the edit uses
+and sets the master to that size: restored detail at the same frames and timing. `katana_wait` for
+those jobs, then render the final. Previews keep the original shots, so a later fix to the cut
+needs no new upscale; a retaken shot does (call `katana_upscale` again: it only does the new ones).
 
 `katana_render` (final) → read every frame of it (`katana_view` target `render-pages`) and check: identity in every hero shot, clothing,
 hands, text spelling and placement, timing against the music, no black gaps, no repeated frames you
@@ -214,18 +268,22 @@ manual changes (moved cuts, rewritten words, swapped takes) unless they ask othe
 | Need | Operation | Default profile | Notes |
 |---|---|---|---|
 | Hero in a scene / style | `still.compose` | `qwen21-edit` | image1 = subject photo, image2 = face crop (`@face`), image3 = accepted hero keyframe or plate |
-| Empty location | `still.generate` | `z-image-turbo` | say "no people" and describe light, lens, weather |
-| Slow-mo hero moment | `clip.i2v` | `wan22-14b-i2v` | 16 fps; 2–4 s |
-| Re-perform a reference shot | `clip.motion` | `wan22-14b-fun-control` | `control: "pose"` for people; `depth` for objects; `edges` only when no person is in frame |
-| New shot from references | `clip.r2v` | `minimax-h3-r2v` | `images` = up to 9 references (photo, outfit, location plate, style frame); `start` pins an accepted keyframe at frame 0 |
-| Morph / transition | `clip.flf` | `wan22-14b-flf` | two accepted stills |
+| Empty location | `still.generate` | `qwen21` | say "no people" and describe light, lens, weather; `z-image-turbo` in commercial mode |
+| Hero moment, small action, camera move | `clip.i2v` | `minimax-h3-i2v` | 24 fps, full model at 20 steps on H3's native canvas; 2–4 s |
+| Re-perform a reference shot's move | `clip.motion` | `wan-animate2` | the reference frames drive the hero at real speed; `minimax-h3-motion` (pose skeletons) opens exactly on the keyframe; `control: "depth"` for objects, `edges` only when no person is in frame |
+| Orbit, arc, push-in with parallax | `clip.motion` + `camera` | `minimax-h3-motion` | the keyframe's own Marigold depth, re-rendered along the move, steers the clip; opens exactly on the keyframe |
+| New shot from references | `clip.r2v` | `minimax-h3-r2v` | `images` = up to 9 references (photo, outfit, location plate, style frame); `start`/`end` pin accepted keyframes |
+| Spin, turn, morph, transition | `clip.flf` | `minimax-h3-flf` | two accepted stills; the face comes back right |
 | Subject cut-out | `matte` | `birefnet` | `start` = an image (RGBA still) or a clip (mask clip for `source.matte`) |
+| Final-size copy of a shot | `upscale` | `seedvr2-7b-sharp` | made by `katana_upscale` for the whole cut; `start` = an accepted clip or still, `longSide` the master's |
 
-`lite` profiles fit 24–48 GB machines: `qwen21-turbo-edit` / `boogu-edit-turbo` for stills, plus
-`wan22-5b-ti2v` and `wan22-5b-fun-control` for video. MiniMax H3 profiles (`minimax-h3-i2v`,
-`minimax-h3-flf`, `minimax-h3-r2v`) render 24 fps with stronger motion and camera work than Wan,
-at higher GPU cost; the user picks them with `katana_backend` (`profiles`) or you name one per job
-(`profile`).
+Clips default to MiniMax H3: in our tests it beat Wan 2.2 on body motion, locked close-ups that keep
+the likeness, and full spins. Its licence excludes the US, EU, UK and South Korea and asks products
+to show "MiniMax H3"; when the user can't use it, the Apache-2.0 Wan 2.2 profiles (`wan22-14b-i2v`,
+`wan22-14b-flf`, `wan22-14b-fun-control`) and `wan-animate2` are the alternatives (set them with
+`katana_backend` `profiles`, or name one per job). `lite` profiles: `qwen21-turbo-edit` /
+`boogu-edit-turbo` for stills, the H3 turbo variants (`minimax-h3-i2v-turbo`, `-flf-turbo`,
+`-r2v-turbo`) for fast drafts, and `wan22-5b-ti2v` / `wan22-5b-fun-control` for 24 GB machines.
 
 **H3 prompts** refer to references by position: `<Picture 1>` is the first image. Define subjects
 first, then the action with time ranges, then sound and negatives, e.g.

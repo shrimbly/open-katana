@@ -11,6 +11,7 @@ import type {
   GlobalEvent,
   GpuSetupRequest,
   Info,
+  LinkStatus,
   ProjectCard,
   ProjectEvent,
   ProjectPageData,
@@ -201,6 +202,9 @@ export const app = {
   // uploads
   upload,
   getUpload: (id: string) => get<Upload>(`/api/uploads/${enc(id)}`),
+  /** An Instagram reel or post, fetched on this computer: its video to decode, or its sound as a track. */
+  importLink: (url: string, purpose: "edit" | "music") => post<Upload>("/api/uploads/link", { url, purpose }),
+  links: () => get<LinkStatus>("/api/links"),
   deleteUpload: (id: string) => del(`/api/uploads/${enc(id)}`),
   uploadMedia: (id: string) => `/uploads/${enc(id)}/media`,
 
@@ -285,6 +289,26 @@ async function mock(method: Method, path: string, body: unknown): Promise<unknow
     case "GET /api/settings":
     case "PUT /api/settings":
       return { model: "opus", maxParallelRuns: 1, defaultClaudeCapUsd: 15, keepAwake: true, licencesAcknowledged: [], ...(body as Partial<AppSettings>) } satisfies AppSettings;
+    case "GET /api/links":
+      return { instaloader: { found: true, version: "4.15.4", install: "pipx install instaloader" }, login: { mode: "none" } } satisfies LinkStatus;
+    case "POST /api/uploads/:id": {
+      // The link import: a reel's video or its sound.
+      const b = body as { url: string; purpose: "edit" | "music" };
+      const edit = b.purpose === "edit";
+      return {
+        id: Math.random().toString(16).slice(2, 10).padEnd(16, "0"),
+        purpose: b.purpose,
+        name: edit ? "@someone · DAbc12xY9.mp4" : "@someone · DAbc12xY9 sound.m4a",
+        kind: edit ? "video" : "audio",
+        bytes: edit ? 4_200_000 : 380_000,
+        url: "",
+        durationSec: 14.2,
+        ...(edit ? { width: 1080, height: 1920, fps: 30, hasAudio: true } : { track: { bpm: 140, confidence: 0.9, dropSec: 6.1, durationSec: 14.2 } }),
+        hash: "0".repeat(64),
+        checks: [],
+        createdAt: new Date().toISOString(),
+      } satisfies Upload;
+    }
     case "GET /api/templates":
       return { templates: browse.templates };
     case "GET /api/templates/:id": {

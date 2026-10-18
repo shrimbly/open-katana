@@ -181,6 +181,17 @@ export function TemplatePage({ slug }: { slug: string }) {
       (e: ApiError) => setMusic(e.code === "ABORTED" ? {} : { error: e.message }),
     );
   };
+  const addMusicLink = (url: string) => {
+    music.uploading?.abort();
+    // pct -1: fetching, no byte progress.
+    // A fetch can't be cancelled mid-way; a later choice simply wins.
+    let current = true;
+    setMusic({ uploading: { name: "Instagram sound", pct: -1, abort: () => (current = false) } });
+    app.importLink(url, "music").then(
+      (u) => current && setMusic({ upload: { ...u, url: u.url || app.uploadMedia(u.id) } }),
+      (e: ApiError) => current && setMusic({ error: e.message }),
+    );
+  };
   const removeMusic = () => {
     const id = music.upload?.id;
     setMusic({});
@@ -471,6 +482,7 @@ export function TemplatePage({ slug }: { slug: string }) {
             alignDrop={alignDrop}
             onAlignDrop={setAlignDrop}
             onFile={addMusic}
+            onLink={addMusicLink}
             onRemove={removeMusic}
           />
           <NoteField value={note} max={t.inputs.instructionsMaxChars} onChange={setNote} />

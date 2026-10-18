@@ -6,7 +6,7 @@
 
 export const ALLOWED_TOOLS = [
   "katana_guide", "katana_status", "katana_backend", "katana_analyze", "katana_view", "katana_review",
-  "katana_plan", "katana_generate", "katana_wait", "katana_judge", "katana_edit", "katana_render", "katana_deliver",
+  "katana_plan", "katana_generate", "katana_wait", "katana_judge", "katana_edit", "katana_upscale", "katana_render", "katana_deliver",
 ].map((t) => `mcp__open-katana__${t}`);
 
 /** Flags the installed `claude` must offer (checked against `claude --help` by setup). */

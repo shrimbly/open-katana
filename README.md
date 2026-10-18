@@ -59,7 +59,21 @@ open-katana is an open alternative to the reference-edit workflow of
     ship ffmpeg < 6 (Ubuntu 22.04 has 4.4, Debian 12 has 5.1): install a newer build.
   - Check: `ffmpeg -hide_banner -filters | grep -E "drawtext|subtitles"` must list both filters.
 - **A ComfyUI to generate on**: local, a remote GPU or Comfy Cloud (see
-  [Configure the backend](#configure-the-backend)).
+  [Configure the backend](#configure-the-backend)). On your own GPU, budget disk for the model
+  weights (measured from the files the profiles download, shared files counted once):
+
+  | Set | Disk |
+  |---|---|
+  | Default workflows: Qwen-Image 2.1 keyframes and plates, MiniMax H3 clips (image-to-video, first/last frame, reference-to-video), Wan Animate 2 motion, BiRefNet mattes | about 105 GB (H3 alone is 61 GB; 83 GB without reference-to-video) |
+  | Apache-2.0 route (commercial mode): Boogu keyframes, Z-Image plates, Wan 2.2 clips, Wan Animate 2 | about 100 GB |
+  | Smallest working set for a 24 GB GPU: Qwen-Image 2.1 Turbo keyframes and plates, Wan 2.2 5B | about 50 GB |
+  | Every profile that can be a default | about 350 GB |
+  | Camera moves (orbits, arcs, push-ins): Marigold V2 depth, on top of MiniMax H3 + Fun ControlNet Union | about 21 GB more |
+  | The upscale for the final render: SeedVR2 7B sharp (3B on the lite tier) | about 9 GB more (4 GB) |
+
+  Comfy Cloud needs none of this: it loads the weights on demand. To fill your own ComfyUI with the
+  default set (140 GB), see [Run open-katana on your own GPU](docs/local-gpu.md): a manifest of every
+  file and download scripts for Windows, Linux and macOS.
 - A network connection on first use: title fonts are downloaded then (see [Third-party](#third-party)).
 
 ## Install
@@ -164,12 +178,14 @@ every missing model and shows the licence of each default. From a terminal,
 |---|---|---|
 | Face crop for identity | YOLOv8 face detector | same |
 | Hero in a scene (identity keyframe) | Qwen-Image 2.1 (then Turbo, Boogu Image Edit, Qwen-Image-Edit 2511) | Qwen-Image 2.1 Turbo, Boogu Image Edit Turbo |
-| Empty location plates | Z-Image Turbo (Krea 2 Turbo and its style reference by name) | Z-Image Turbo |
-| Slow-motion hero clips | Wan 2.2 I2V A14B + lightx2v 4-step (or MiniMax H3 + 8-step turbo) | Wan 2.2 TI2V 5B |
-| Motion from a reference shot | Wan 2.2 Fun Control A14B (pose / depth / edges) | Wan 2.2 Fun Control 5B |
-| New shots from reference images | MiniMax H3 reference-to-video + 4-step turbo | — |
-| Morphs and transitions | Wan 2.2 A14B first/last frame (or MiniMax H3) | — |
+| Empty location plates | Qwen-Image 2.1 (the keyframe weights; Z-Image Turbo in commercial mode; Krea 2 Turbo and its style reference by name) | Qwen-Image 2.1 Turbo |
+| Clips from a keyframe | MiniMax H3 image-to-video (full model, native canvas; Wan 2.2 I2V A14B as the Apache-2.0 fallback) | MiniMax H3 + 8-step turbo, Wan 2.2 TI2V 5B |
+| Motion from a reference shot (fights, dance, sport) | Wan Animate 2 (MiniMax H3 + Fun ControlNet Union on pose skeletons, Wan 2.2 Fun Control A14B) | Wan Animate 2, Wan 2.2 Fun Control 5B |
+| Camera moves: orbits, arcs, push-ins with parallax | MiniMax H3 + Fun ControlNet Union, steered by the keyframe's own Marigold V2 depth re-rendered along the move | same |
+| New shots from reference images | MiniMax H3 reference-to-video | MiniMax H3 reference-to-video + 4-step turbo |
+| Spins, turns, morphs and transitions | MiniMax H3 first/last frame (Wan 2.2 A14B first/last frame) | MiniMax H3 first/last frame + 8-step turbo |
 | Subject mattes | BiRefNet | BiRefNet |
+| Upscale for the final render (1080p by default) | SeedVR2 7B sharp (then SeedVR2 7B) | SeedVR2 3B |
 
 Graphs are built in code from the official ComfyUI templates and validated against your server's
 `object_info`; model files are matched by name across precision variants (fp8, bf16, …). Each
@@ -193,12 +209,15 @@ licence on each model card before you publish or sell anything made with it.
 | [FLUX 3 Image Klein](https://huggingface.co/black-forest-labs/flux-3-image-klein) | `flux3-klein-edit`, `flux3-klein` (only when named) | [FLUX Kommunity License v1.0](https://huggingface.co/black-forest-labs/flux-3-image-klein/blob/main/LICENSE.md) | Restricted: commercial output only for organisations under US$5M gross annual revenue (affiliates included) |
 | [Mage-Flow-Edit Turbo](https://huggingface.co/Comfy-Org/Mage-Flow) | `mage-flow-edit-turbo` (only when named) | MIT per the Comfy-Org repackage; unverified, see model card | See model card |
 | [Lens Turbo](https://huggingface.co/Comfy-Org/Lens) | `lens-turbo` (only when named) | MIT per the Comfy-Org repackage; unverified, see model card | See model card |
-| [Z-Image Turbo](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo) | `z-image-turbo` (default plates) | Apache-2.0 | Yes |
+| [Z-Image Turbo](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo) | `z-image-turbo` (plates in commercial mode) | Apache-2.0 | Yes |
 | [ERNIE-Image Turbo](https://huggingface.co/baidu/ERNIE-Image-Turbo) | `ernie-image-turbo` | Apache-2.0 | Yes |
 | [Krea 2 Turbo](https://huggingface.co/krea/Krea-2-Turbo) and its style-reference LoRA | `krea2-turbo`, `krea2-style-reference` (only when named) | [Krea 2 Community License](https://cdn.jsdelivr.net/gh/krea-ai/krea-2@db3984fbc6e13b34c0064990fc2d95ac64d00058/assets/hf_samples/LICENSE.pdf) | Restricted: commercial use only for organisations under US$1M total annual revenue, plus content-filtering and pass-through obligations |
 | [Wan 2.2](https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B) (I2V A14B, TI2V 5B, [Fun Control](https://huggingface.co/alibaba-pai/Wan2.2-Fun-A14B-Control)) + [lightx2v LoRAs](https://huggingface.co/lightx2v/Wan2.2-Distill-Loras) | `wan22-*` | Apache-2.0 | Yes |
-| [MiniMax H3](https://huggingface.co/MiniMaxAI/MiniMax-H3) + turbo LoRAs | `minimax-h3-i2v`, `minimax-h3-flf`, `minimax-h3-r2v` | [MiniMax H3 Community License](https://huggingface.co/MiniMaxAI/MiniMax-H3/blob/main/LICENSE) | Restricted: use of the open weights and their outputs in the United States, the European Union, the United Kingdom and South Korea is not licensed, whether on your own GPU or on a hosted service such as Comfy Cloud; attribution required; separate authorisation above US$20M annual revenue. MiniMax's own API is under separate terms. |
-| [SDPose Wholebody](https://huggingface.co/Comfy-Org/SDPose), [Depth Anything 3 Mono Large](https://huggingface.co/depth-anything/DA3MONO-LARGE) | pose and depth control for `wan22-*-fun-control` | MIT (SDPose), Apache-2.0 (Depth Anything 3) | Yes |
+| [MiniMax H3](https://huggingface.co/MiniMaxAI/MiniMax-H3) + [turbo LoRAs](https://github.com/ModelTC/Minimax-H3-Turbo) and [Fun ControlNet Union](https://huggingface.co/alibaba-pai/MiniMax-H3-Fun-Controlnet-Union) (the default for clips) | `minimax-h3-i2v`, `minimax-h3-flf`, `minimax-h3-r2v`, `minimax-h3-motion` and the `-turbo` variants | [MiniMax H3 Community License](https://huggingface.co/MiniMaxAI/MiniMax-H3/blob/main/LICENSE) | Restricted: use of the open weights and their outputs in the United States, the European Union, the United Kingdom and South Korea is not licensed, whether on your own GPU or on a hosted service such as Comfy Cloud; a product that uses it must show "MiniMax H3" in its interface; separate authorisation above US$20M annual revenue; outputs may not be used to train other models. Comfy states that Comfy Cloud generations include commercial rights: check that this covers your territory. MiniMax's own API is under separate terms. |
+| [Wan Animate 2](https://huggingface.co/Wan-AI/Wan2.2-Animate-2-14B) ([Comfy repackage](https://huggingface.co/Comfy-Org/Wan-Animate-2)) | `wan-animate2` | Apache-2.0 | Yes |
+| [SDPose Wholebody](https://huggingface.co/Comfy-Org/SDPose) with its RT-DETR person detector, [Depth Anything 3 Mono Large](https://huggingface.co/depth-anything/DA3MONO-LARGE) | pose control, and depth control with `depth: "da3"`, for `minimax-h3-motion` and `wan22-*-fun-control` | MIT (SDPose), Apache-2.0 (Depth Anything 3) | Yes |
+| [Marigold V2 depth](https://huggingface.co/Comfy-Org/marigold-v2-0) (a LoRA on Qwen-Image-Edit 2509) | the depth for camera moves and `control: "depth"` | Apache-2.0 | Yes |
+| [SeedVR2](https://huggingface.co/Comfy-Org/SeedVR2) 7B sharp, 7B and 3B | the upscale of every shot before the final render | Apache-2.0 | Yes |
 | [BiRefNet](https://huggingface.co/ZhengPeng7/BiRefNet) | `birefnet` | MIT | Yes |
 | face_yolov8m ([Bingsu/adetailer](https://huggingface.co/Bingsu/adetailer)) | `face-crop` | Apache-2.0 weights (per the uploader), run by Ultralytics YOLOv8 code (AGPL-3.0) inside the ComfyUI FaceParsing node | Weights: yes; the detector code is AGPL-3.0 |
 
@@ -213,6 +232,9 @@ Claude to run `katana_backend` with `action: "set"` and `commercial: true` (save
 `config.json`). Model defaults then skip profiles with a non-commercial licence (keyframes use
 Boogu Image Edit or Qwen-Image-Edit 2511 instead). Profiles under restricted licences, such as
 MiniMax H3, stay available and are flagged, and a profile you name still runs, with a warning.
+MiniMax H3 is the default for every clip; if its licence doesn't cover you, choose **Use Wan 2.2 for
+clips instead** on the app's receipt for an edit, or set the Wan profiles with `katana_backend`
+`profiles` (`clip.i2v: wan22-14b-i2v`, `clip.flf: wan22-14b-flf`, `clip.motion: wan-animate2`).
 `katana_backend` shows the licence of each profile in use, and `katana_plan` shows each job's
 licence and lists licence warnings before you approve the estimate.
 
@@ -236,13 +258,22 @@ computer's), and ffmpeg. Running `node dist/cli.js app` again opens the app that
 if an older open-katana holds the port, the app tells you to restart it with `--replace`, or starts
 on a free port and prints the address.
 
-1. **Templates.** Click one, drop a photo and your track (until templates ship their own), and
-   change the words if you like: every field starts with the template's own. The receipt shows
+1. **Templates.** Click one, drop a photo, and change the words if you like: every field starts
+   with the template's own. Each template ships its own soundtrack; to use yours, choose **My own
+   track** and drop a file or paste an Instagram reel link (**Use its sound**). The receipt shows
    the time, GPU minutes and Claude usage as ranges, the caps, and each model's licence. **Make my
    edit** approves those caps.
-2. **Any edit.** Drop a video (2–60 s) anywhere on the home page. It decodes in a few seconds and
-   draws its Cut Map: every cut, flash and beat. Click **Put me in this edit**, drop a photo, and
-   **Make my edit**.
+2. **Any edit.** Drop a video (2–60 s) anywhere on the home page, or paste an Instagram reel link
+   and click **Copy this edit**. It decodes in a few seconds and draws its Cut Map: every cut,
+   flash and beat. Click **Put me in this edit**, drop a photo, and **Make my edit**.
+
+Instagram links are fetched on your computer with [instaloader](https://github.com/instaloader/instaloader)
+(MIT), which you install yourself: `pipx install instaloader`. Instagram often wants you signed in:
+run `instaloader --login <your username>` once in a terminal (it saves a session, and your password
+stays with instaloader), then enter the username in the app's **Settings**, or pick a browser there
+to borrow its Instagram login. The app never asks for your Instagram password. Copy only edits, and
+use only sounds, you have the rights to: downloading other people's posts can break Instagram's
+terms and their copyright.
 
 The director is your own Claude Code, run headless with only the open-katana tools; the shots are
 made on your ComfyUI. Edits keep going if you close the app, Stop also cancels the GPU jobs, and
@@ -300,10 +331,11 @@ the EDL, renders and delivered versions. Any session can resume a project with `
 ## Documentation
 
 - [The app](docs/app.md)
+- [Run open-katana on your own GPU](docs/local-gpu.md): the model files and download scripts
 - [Authoring templates](docs/templates.md)
 - [Architecture](docs/architecture.md)
 - [EDL reference](docs/edl.md)
-- [Choosing the image models](docs/models.md)
+- [Choosing the models](docs/models.md): keyframes, clips and motion transfer, with test results
 - [Research notes: Higgsfield Katana and open-katana](docs/research.md)
 
 ## Development

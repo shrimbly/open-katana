@@ -130,6 +130,8 @@ export interface StreamFacts {
   plan: { fiveHour?: number; sevenDay?: number; resetsAt?: string };
   judged: Map<string, { verdict: "accept" | "reject"; reason?: string; at: string }>;
   study?: { page: number; pages: number };
+  /** A katana_generate call was seen this attempt: an edit or render before it is the director studying the skeleton. */
+  generateSeen?: boolean;
   delivered?: { version: number; path: string; sizeMB?: number; durationSec?: number };
   result?: { subtype: string; isError: boolean; costUsd?: number; durationMs?: number; turns?: number; text: string; apiError?: string; apiErrorStatus?: number };
   warnings: string[];
@@ -268,7 +270,8 @@ function toolPhase(f: StreamFacts, tool: string, input: Record<string, unknown>,
         }
         return { phase: "study" };
       }
-      return VIEW_CHECK.has(target) ? { phase: "check", undo: true } : undefined;
+      if (!VIEW_CHECK.has(target)) return undefined;
+      return probing(f) ? undefined : { phase: "check", undo: true };
     }
     case "katana_plan": {
       const plan = input.plan as { jobs?: { line?: unknown; operation?: unknown }[] } | undefined;
@@ -280,11 +283,17 @@ function toolPhase(f: StreamFacts, tool: string, input: Record<string, unknown>,
       // A retake that fails to submit goes back to where the run was; a failed first submit of a class stays (the run is generating).
       {
         const back = Boolean(f.phase && PHASES.indexOf(f.phase) >= PHASES.indexOf("cut"));
+        f.generateSeen = true;
         return { phase: generatePhase(f, input, ctx), back, undo: back };
       }
     case "katana_edit":
-      return { phase: "cut", undo: true };
+      // Before any generation, an edit (a skeleton filled with placeholders) is the director studying the timing.
+      return probing(f) ? { phase: "plan" } : { phase: "cut", undo: true };
+    case "katana_upscale":
+      // The finishing pass of the final render.
+      return { phase: "render", undo: true };
     case "katana_render":
+      if (probing(f)) return { phase: "plan" }; // a draft render of that placeholder edit
       f.render = input.preview === false ? "final" : "preview";
       return { phase: "render", undo: true };
     case "katana_deliver":
@@ -292,6 +301,15 @@ function toolPhase(f: StreamFacts, tool: string, input: Record<string, unknown>,
     default:
       return undefined; // katana_wait, katana_judge: the phase stays
   }
+}
+
+/**
+ * True while the director has generated nothing this attempt and the run is still before the stills:
+ * an edit or render then is a probe of the skeleton (a placeholder cut, a draft render), not the cut.
+ * A continued attempt starts in the phase its files show, so a real re-cut after generation still counts.
+ */
+function probing(f: StreamFacts): boolean {
+  return !f.generateSeen && (!f.phase || PHASES.indexOf(f.phase) < PHASES.indexOf("stills"));
 }
 
 /** Enters the call's phase when it is made; a call that fails puts the phase back (see onToolError). */
@@ -370,6 +388,7 @@ function onToolOk(f: StreamFacts, call: ToolCall | undefined, e: Extract<StreamE
       return;
     }
     case "katana_generate":
+    case "katana_upscale":
       if (f.attention && ["BUDGET_CAP", "NEEDS_APPROVAL", "OUT_OF_CREDITS", "BACKEND_DOWN"].includes(f.attention.code)) f.attention = undefined;
       return;
     case "katana_judge": {
@@ -604,6 +623,8 @@ export function buildTakes(project: string, f: StreamFacts, files: FileSnapshot)
   const takes: Take[] = [];
   if (files.jobs.length) {
     for (const j of files.jobs) {
+      // An upscale is a sharper copy of a take already shown, not a take of its own.
+      if (j.spec.operation === "upscale") continue;
       const kind = takeKind(j.spec.operation);
       const slot = slotOf(j.line, slots);
       if (j.state === "completed") {

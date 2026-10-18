@@ -243,6 +243,11 @@ export const EdlSchema = z.object({
     fps: z.number().positive().max(120),
     /** Total length; defaults to the end of the last shot. */
     durationSec: z.number().positive().optional(),
+    /**
+     * The final render's size: the canvas scaled so its long side is this many pixels. Text, effects and
+     * framing scale with it, and generated shots with an upscaled copy use that copy. Previews keep the canvas.
+     */
+    master: z.object({ longSide: z.number().int().min(256).max(4096) }).optional(),
   }),
   /**
    * Beat grid override: `b<n>` times follow a fixed tempo with beat 0 at `phase` seconds, instead of

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "preact/hooks";
-import type { RunState, RunSummary, TemplateCard } from "../../../../src/app/types.js";
+import type { RunState, RunSummary, TemplateCard, Upload } from "../../../../src/app/types.js";
 import { ApiError, app } from "../api.js";
 import { fmtRange } from "../beat.js";
 import { splitHeadline } from "../copy.js";
@@ -32,6 +32,8 @@ interface DecodeUpload {
   pct: number;
   error?: string;
   abort?: () => void;
+  /** Fetching an Instagram link: no byte progress, just the wait. */
+  link?: boolean;
 }
 
 export function Home() {
@@ -72,17 +74,35 @@ export function Home() {
     }
     const task = app.upload(f, "edit", (frac) => setUp((u) => (u && !u.error ? { ...u, pct: frac * 100 } : u)));
     setUp({ name: f.name, pct: 0, abort: task.abort });
-    task.promise
-      .then(async (u) => {
-        setUp({ name: f.name, pct: 100 });
-        const r = await app.decode({ upload: u.id });
-        if (r.reused) toast(`You decoded this edit on ${dayOf(r.project) ?? "an earlier day"}. Opening it.`);
-        navigate(`/decode/${encodeURIComponent(r.project)}`);
-      })
-      .catch((e: ApiError) => {
-        if (e.code === "ABORTED") return setUp(undefined);
-        setUp({ name: f.name, pct: 0, error: e.message });
-      });
+    task.promise.then((u) => startDecode(u, f.name)).catch((e: ApiError) => {
+      if (e.code === "ABORTED") return setUp(undefined);
+      setUp({ name: f.name, pct: 0, error: e.message });
+    });
+  };
+
+  /** An uploaded edit, from a file or an Instagram link, goes to the decode. */
+  const startDecode = async (u: Upload, name: string) => {
+    setUp({ name, pct: 100 });
+    const r = await app.decode({ upload: u.id });
+    if (r.reused) toast(`You decoded this edit on ${dayOf(r.project) ?? "an earlier day"}. Opening it.`);
+    navigate(`/decode/${encodeURIComponent(r.project)}`);
+  };
+
+  const [link, setLink] = useState("");
+  const copyLink = (e: Event) => {
+    e.preventDefault();
+    const url = link.trim();
+    if (!url || busy) return;
+    if (decodeOff) {
+      setUp({ name: "Instagram link", pct: 0, error: "Install ffmpeg to decode and render edits." });
+      return;
+    }
+    setUp({ name: "Instagram link", pct: 0, link: true });
+    app
+      .importLink(url, "edit")
+      .then((u) => startDecode(u, u.name))
+      .then(() => setLink(""))
+      .catch((err: ApiError) => setUp({ name: "Instagram link", pct: 0, error: err.message }));
   };
 
   const take = (files: File[]) => {
@@ -175,13 +195,14 @@ export function Home() {
             {busy ? (
               <div class="kt-dropbox-progress" role="status">
                 <p>
-                  {up.pct >= 100 ? "Starting the decode…" : "Uploading"} <span class="kt-dropbox-name">{up.name}</span>
-                  {up.pct < 100 && <span class="mono"> {Math.round(up.pct)}%</span>}
+                  {up.link ? "Fetching the edit from Instagram…" : up.pct >= 100 ? "Starting the decode…" : "Uploading"}
+                  {!up.link && <span class="kt-dropbox-name"> {up.name}</span>}
+                  {!up.link && up.pct < 100 && <span class="mono"> {Math.round(up.pct)}%</span>}
                 </p>
-                <span class="kt-line-track">
-                  <span class="kt-line-bar" style={{ transform: `scaleX(${Math.max(0.03, up.pct / 100)})` }} />
+                <span class={`kt-line-track${up.link ? " waiting" : ""}`}>
+                  <span class="kt-line-bar" style={{ transform: `scaleX(${up.link ? 0.35 : Math.max(0.03, up.pct / 100)})` }} />
                 </span>
-                {up.pct < 100 && (
+                {!up.link && up.pct < 100 && (
                   <button type="button" class="btn ghost small" onClick={() => up.abort?.()}>
                     Cancel
                   </button>
@@ -203,7 +224,29 @@ export function Home() {
               </>
             )}
           </div>
-          <p class="kt-fine kt-dropbox-hint">Saved from TikTok or Instagram? Save the video to your device first, then drop it here.</p>
+          <form class="kt-link-form" onSubmit={copyLink}>
+            <label class="kt-fine" for="edit-link">
+              Or paste an Instagram reel link
+            </label>
+            <div class="kt-link-row">
+              <input
+                id="edit-link"
+                class="kt-input"
+                type="url"
+                inputMode="url"
+                autoComplete="off"
+                spellcheck={false}
+                placeholder="https://www.instagram.com/reel/…"
+                value={link}
+                onInput={(e) => setLink(e.currentTarget.value)}
+                disabled={busy}
+              />
+              <button type="submit" class="btn" disabled={!link.trim() || busy || decodeOff}>
+                Copy this edit
+              </button>
+            </div>
+            <p class="kt-fine kt-dropbox-hint">Fetched on this computer with instaloader. Copy only edits you have the rights to use. From TikTok? Save the video, then drop it here.</p>
+          </form>
         </div>
       </section>
 

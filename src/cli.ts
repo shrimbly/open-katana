@@ -16,6 +16,9 @@ Usage:
   open-katana mcp                      Run the MCP server on stdio (for Claude Code / Claude Desktop)
   open-katana analyze <video> [dir]    Analyze a reference edit and write sheets + JSON to dir
   open-katana backend                  Check the configured ComfyUI and which profiles can run
+  open-katana models [--tier lite] [--json]
+                                       List the model files the default workflows need (with sizes), to
+                                       download into a local or remote ComfyUI (docs/local-gpu.md)
   open-katana app [--port N] [--no-open] [--replace]
                                        Open the app: templates, decode, make and your edits (default port 4310;
                                        --no-open only prints its URL; --replace restarts a running app)
@@ -73,6 +76,20 @@ async function main(argv: string[]): Promise<void> {
           process.stdout.write(`  ${a.runnable ? "ready  " : "missing"} ${p.id.padEnd(24)} ${a.missingModels.join(", ")}\n`);
         }
       }
+      return;
+    }
+    case "models": {
+      const { modelManifest, withSizes } = await import("./comfy/manifest.js");
+      const tierArg = rest.indexOf("--tier");
+      const tier = tierArg >= 0 && rest[tierArg + 1] === "lite" ? "lite" : "quality";
+      if (rest.includes("--json")) {
+        const [quality, lite] = await Promise.all([withSizes(modelManifest("quality")), withSizes(modelManifest("lite"))]);
+        process.stdout.write(`${JSON.stringify({ quality, lite }, null, 2)}\n`);
+        return;
+      }
+      const files = await withSizes(modelManifest(tier));
+      for (const f of files) process.stdout.write(`${((f.bytes ?? 0) / 1e9).toFixed(2).padStart(6)} GB  ${f.folder.padEnd(18)} ${f.name}\n`);
+      process.stdout.write(`${(files.reduce((s, f) => s + (f.bytes ?? 0), 0) / 1e9).toFixed(1)} GB in ${files.length} files (${tier} tier)\n`);
       return;
     }
     case "studio": {

@@ -21,6 +21,9 @@ import { costRange, type HistoryKind, loadHistory, wallRange } from "./history.j
 import { briefLines, firstPrompt, type PromptInput } from "./prompt.js";
 import { projectDir } from "./store.js";
 
+/** The Apache-2.0 clip profiles a run switches to with "Use Wan 2.2 for clips instead". */
+export const WAN_CLIPS: Record<string, string> = { "clip.i2v": "wan22-14b-i2v", "clip.flf": "wan22-14b-flf", "clip.motion": "wan-animate2" };
+
 /**
  * The receipt before any agent runs, and the exact first prompt (spec §9.14). Deterministic for the
  * same inputs, files and history; the numbers use the same budget maths as katana_plan and the
@@ -47,6 +50,7 @@ const ROLE: Record<string, string> = {
   "clip.r2v": "reference clips",
   "clip.motion": "motion clips",
   matte: "cut-outs",
+  upscale: "upscale",
 };
 
 /** The model family name used in copy ("Qwen-Image 2.1", "MiniMax H3"), from the profile id. */
@@ -408,8 +412,20 @@ export async function analyzeDraft(draft: RunDraft, opts: { setup?: SetupStatus;
     if (draft.musicChoice === "mine" && draft.music) trackDuration = (await trackAnalysis(draft.music).catch(() => undefined))?.durationSec;
   }
 
-  // Profiles as the MCP server will pick them: config overrides, minus the run's Wan swap.
-  const overrides: Record<string, string | null> = draft.clipsModel === "wan22" ? { "clip.i2v": null, "clip.flf": null } : {};
+  // The finishing pass: every shot of the cut (each clip, and each still that is a shot of its own) is
+  // upscaled before the final render.
+  jobs = [
+    ...jobs,
+    ...jobs
+      .filter((j) => j.operation.startsWith("clip.") || (j.operation.startsWith("still.") && j.line !== "face" && !j.line.endsWith("-key")))
+      .map((j) => ({ line: `up-${j.line}`, operation: "upscale" as const, takes: 1, ...(j.durationSec ? { durationSec: j.durationSec } : {}) })),
+  ];
+
+  // Profiles as the MCP server will pick them: config overrides, plus the run's swap to the Apache-2.0
+  // Wan models when the person turns MiniMax H3 off. Wan has no reference-to-video, so those slots
+  // are planned as image-to-video from their keyframe.
+  const overrides: Record<string, string | null> = draft.clipsModel === "wan22" ? { ...WAN_CLIPS } : {};
+  if (draft.clipsModel === "wan22") jobs = jobs.map((j) => (j.operation === "clip.r2v" ? { ...j, operation: "clip.i2v" } : j));
   const effective: Record<string, string> = { ...cfg.profiles };
   for (const [op, v] of Object.entries(overrides)) {
     if (v === null) delete effective[op];
@@ -439,6 +455,7 @@ export async function analyzeDraft(draft: RunDraft, opts: { setup?: SetupStatus;
     { label: "Face crop", match: (op) => op === "still.face", detail: () => "1 crop of your face photo" },
     { label: "Clips", match: (op) => op.startsWith("clip."), detail: (js) => `${js.length} clip${js.length === 1 ? "" : "s"} · ${Math.min(...js.map((j) => j.videoSec ?? 2))}–${Math.max(...js.map((j) => j.videoSec ?? 2))} s` },
     { label: "Cut-outs", match: (op) => op === "matte", detail: (js) => `${js.length} cut-out${js.length === 1 ? "" : "s"}` },
+    { label: "Upscale", match: (op) => op === "upscale", detail: (js) => `${js.length} shot${js.length === 1 ? "" : "s"} sharpened to 1080p for the final render` },
   ];
   const groups: Estimate["groups"] = [];
   for (const g of groupDefs) {
@@ -465,7 +482,7 @@ export async function analyzeDraft(draft: RunDraft, opts: { setup?: SetupStatus;
   // Licences of the profiles actually chosen.
   const chosen = [...new Set(rows.map((r) => r.profile))];
   const licences = chosen.map((id) => licenceNote(id, settings.licencesAcknowledged.includes(id))).filter((l): l is LicenceNote => Boolean(l));
-  const canUseWan22 = rows.some((r) => (r.operation === "clip.i2v" || r.operation === "clip.flf") && r.profile.startsWith("minimax-h3-"));
+  const canUseWan22 = rows.some((r) => r.operation.startsWith("clip.") && r.profile.startsWith("minimax-h3-"));
 
   const warnings: Estimate["warnings"] = [];
   if (where === "cloud") warnings.push({ code: "SHARED_CREDITS", message: "Credits are shared across your Comfy workspace." });
@@ -533,6 +550,7 @@ export async function analyzeDraft(draft: RunDraft, opts: { setup?: SetupStatus;
     words: bound,
     verbatim: brief?.file.verbatim ?? [],
     planFirst: draft.planFirst,
+    ...(draft.clipsModel === "wan22" ? { apacheClips: true } : {}),
   };
   return { estimate, promptInput, preset, decode, fields, fit, brief, overrides, commercial, historyKind };
 }

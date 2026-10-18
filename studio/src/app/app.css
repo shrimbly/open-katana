@@ -1025,6 +1025,40 @@
   padding: 0 4px;
   text-align: center;
 }
+/* Paste an Instagram link: under the drop box on Home, inside the track field on a template. */
+.kt-link-form {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+.kt-link-row {
+  display: flex;
+  gap: 8px;
+}
+.kt-link-row .kt-input {
+  flex: 1;
+  min-width: 0;
+}
+.kt-link-row .btn {
+  flex: none;
+}
+@media (max-width: 480px) {
+  .kt-link-row {
+    flex-direction: column;
+  }
+}
+/* No byte progress while a link is fetched: a short bar sweeps instead. */
+.kt-line-track.waiting .kt-line-bar {
+  animation: kt-sweep 1.4s ease-in-out infinite;
+}
+@keyframes kt-sweep {
+  from {
+    translate: -100% 0;
+  }
+  to {
+    translate: 300% 0;
+  }
+}
 .kt-drop-dim {
   position: fixed;
   inset: 0;
@@ -2547,6 +2581,11 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .kt-line-track.waiting .kt-line-bar {
+    animation: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .kt-slam,
   .kt-sheet,

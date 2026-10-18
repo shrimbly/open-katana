@@ -367,6 +367,8 @@ export interface TrackFieldProps {
   alignDrop: boolean;
   onAlignDrop(v: boolean): void;
   onFile(f: File): void;
+  /** Use the sound of an Instagram reel or post. */
+  onLink?(url: string): void;
   onRemove(): void;
 }
 
@@ -378,6 +380,7 @@ export function TrackField(p: TrackFieldProps) {
   const audio = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState<string>();
   const [over, setOver] = useState(false);
+  const [link, setLink] = useState("");
   const toggle = (url: string) => {
     const a = audio.current;
     if (!a) return;
@@ -428,11 +431,15 @@ export function TrackField(p: TrackFieldProps) {
         </div>
       ) : p.uploading ? (
         <div class="kt-upload-line">
-          <p>
-            Uploading {p.uploading.name}… <span class="mono">{Math.round(p.uploading.pct)}%</span>
-          </p>
-          <span class="kt-line-track" aria-hidden="true">
-            <span class="kt-line-bar" style={{ transform: `scaleX(${Math.max(0.04, p.uploading.pct / 100)})` }} />
+          {p.uploading.pct < 0 ? (
+            <p>Fetching the sound from Instagram…</p>
+          ) : (
+            <p>
+              Uploading {p.uploading.name}… <span class="mono">{Math.round(p.uploading.pct)}%</span>
+            </p>
+          )}
+          <span class={`kt-line-track${p.uploading.pct < 0 ? " waiting" : ""}`} aria-hidden="true">
+            <span class="kt-line-bar" style={{ transform: `scaleX(${p.uploading.pct < 0 ? 0.35 : Math.max(0.04, p.uploading.pct / 100)})` }} />
           </span>
         </div>
       ) : (
@@ -461,6 +468,39 @@ export function TrackField(p: TrackFieldProps) {
             </button>
             <span class="kt-fine">MP3, WAV, M4A, AAC, FLAC or OGG · 10 s – 10 min</span>
           </div>
+          {p.onLink && (
+            <form
+              class="kt-link-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const url = link.trim();
+                if (!url) return;
+                p.onLink!(url);
+                setLink("");
+              }}
+            >
+              <label class="kt-fine" for="track-link">
+                Or use the sound of an Instagram reel
+              </label>
+              <div class="kt-link-row">
+                <input
+                  id="track-link"
+                  class="kt-input"
+                  type="url"
+                  inputMode="url"
+                  autoComplete="off"
+                  spellcheck={false}
+                  placeholder="https://www.instagram.com/reel/…"
+                  value={link}
+                  onInput={(e) => setLink(e.currentTarget.value)}
+                />
+                <button type="submit" class="btn" disabled={!link.trim()}>
+                  Use its sound
+                </button>
+              </div>
+              <p class="kt-fine">Use only audio you have the rights to.</p>
+            </form>
+          )}
         </div>
       )}
       {p.error && (

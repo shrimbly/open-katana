@@ -97,7 +97,7 @@ cd ~/.open-katana/projects/<project>/runs/<run> && claude -p \
 ```
 
 - `--tools ""` turns off Claude Code's own tools (no shell, no file access, no web).
-- `--allowedTools` lists the 13 katana workflow tools; `--permission-mode dontAsk` denies anything
+- `--allowedTools` lists the 14 katana workflow tools; `--permission-mode dontAsk` denies anything
   else without asking.
 - `--setting-sources ""` and `--strict-mcp-config` keep your own settings, hooks, plugins and MCP
   servers out of the run. The app checks this when the run starts and stops it if the open-katana
@@ -108,6 +108,26 @@ cd ~/.open-katana/projects/<project>/runs/<run> && claude -p \
 
 The director model is Opus by default. Settings offers Sonnet: cheaper, but worse at judging
 likeness.
+
+## Instagram links
+
+Paste a reel or post link on Home (**Copy this edit**: its video is decoded like a dropped file) or
+in a template's track field (**Use its sound**: its audio becomes your track). The app runs
+[instaloader](https://github.com/instaloader/instaloader) on this computer to fetch it, then stages
+the file like any upload; the download folder is deleted afterwards.
+
+- Install instaloader yourself: `pipx install instaloader` (or `pip install instaloader`). The app
+  finds `instaloader` on your PATH, then `python3 -m instaloader`; `OPEN_KATANA_INSTALOADER` points
+  it at another copy. **Settings › Instagram links** says whether it was found.
+- Signing in: Instagram often refuses signed-out requests ("Please wait a few minutes", or a post
+  that "didn't return"). Run `instaloader --login <your username>` once in a terminal: instaloader
+  asks for your password there and saves only a session cookie. Enter the same username in
+  Settings and the app passes `--login` (only when that saved session exists, so instaloader never
+  stops to ask for a password). Or pick a browser in Settings and instaloader borrows the Instagram
+  login of that browser (`--load-cookies`). The app never asks for, stores or sends your password.
+- Copy only edits, and use only sounds, you have the rights to. Downloading other people's posts
+  can break Instagram's terms and their copyright, and a sound from someone else's reel usually
+  isn't yours to publish.
 
 ## Privacy
 

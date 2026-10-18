@@ -30,6 +30,8 @@ export const AssetSchema = z.object({
   hasAudio: z.boolean().optional(),
   jobId: z.string().optional(),
   lineId: z.string().optional(),
+  /** The asset this one is an upscaled copy of: final renders use it in that asset's place. */
+  upscaleOf: z.string().optional(),
   createdAt: z.string(),
 });
 export type Asset = z.infer<typeof AssetSchema>;
@@ -208,6 +210,11 @@ export class Workspace {
     return this.path(this.asset(id).path);
   }
 
+  /** The newest upscaled copy of an asset, if one was made. */
+  upscaled(id: string): Asset | undefined {
+    return this.project.assets.filter((a) => a.upscaleOf === id).at(-1);
+  }
+
   reference(): Asset | undefined {
     return this.project.assets.find((a) => a.role === "reference" && a.kind === "video");
   }
@@ -223,7 +230,7 @@ export class Workspace {
   }
 
   /** Registers a file already inside the project directory. Probes media metadata. */
-  async register(opts: { path: string; role: Role; id?: string; label?: string; source?: string; jobId?: string; lineId?: string }): Promise<Asset> {
+  async register(opts: { path: string; role: Role; id?: string; label?: string; source?: string; jobId?: string; lineId?: string; upscaleOf?: string }): Promise<Asset> {
     const kind = kindForPath(opts.path);
     const id = opts.id ?? this.nextAssetId(opts.role === "subject" ? "s" : opts.role === "generated" ? "g" : opts.role === "reference" ? "ref" : opts.role.slice(0, 3));
     const asset: Asset = {
@@ -235,6 +242,7 @@ export class Workspace {
       label: opts.label,
       jobId: opts.jobId,
       lineId: opts.lineId,
+      ...(opts.upscaleOf ? { upscaleOf: opts.upscaleOf } : {}),
       createdAt: new Date().toISOString(),
     };
     const info = await probe(opts.path);

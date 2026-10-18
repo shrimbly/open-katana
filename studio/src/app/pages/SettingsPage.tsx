@@ -1,5 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
-import type { AppSettings } from "../../../../src/app/types.js";
+import type { AppSettings, LinkStatus } from "../../../../src/app/types.js";
+import { app } from "../api.js";
 import { saveSettings, useApp } from "../Shell.js";
 import { toast } from "../ui.js";
 
@@ -11,8 +12,14 @@ export function SettingsPage() {
   const { settings } = useApp();
   const [saved, setSaved] = useState("");
   const [cap, setCap] = useState<string>();
+  const [links, setLinks] = useState<LinkStatus>();
+  const [igUser, setIgUser] = useState<string>();
   useEffect(() => {
     document.title = "Settings · open-katana";
+  }, []);
+  const refreshLinks = () => app.links().then(setLinks, () => setLinks(undefined));
+  useEffect(() => {
+    void refreshLinks();
   }, []);
 
   const save = async (patch: Partial<AppSettings>, said = "Saved.") => {
@@ -121,6 +128,18 @@ export function SettingsPage() {
         </label>
       </div>
 
+      <InstagramSetting
+        settings={settings}
+        links={links}
+        user={igUser}
+        onUser={setIgUser}
+        onSave={async (patch) => {
+          await save(patch);
+          setIgUser(undefined);
+          void refreshLinks();
+        }}
+      />
+
       <div class="kt-setting">
         <span class="label">Licence notes</span>
         <div class="kt-setting-row">
@@ -144,5 +163,76 @@ export function SettingsPage() {
         {saved}
       </p>
     </main>
+  );
+}
+
+const BROWSERS = ["chrome", "firefox", "safari", "edge", "brave", "opera", "vivaldi", "chromium"] as const;
+const titleCase = (b: string) => b.charAt(0).toUpperCase() + b.slice(1);
+
+/** Instagram links: whether instaloader is here, and how it signs in. No password is ever asked for or kept. */
+function InstagramSetting(p: { settings: AppSettings; links?: LinkStatus; user?: string; onUser(v: string | undefined): void; onSave(patch: Partial<AppSettings>): Promise<void> }) {
+  const value = p.user ?? p.settings.instagramUser ?? "";
+  const commit = () => {
+    const v = value.trim().replace(/^@/, "");
+    if (!/^[A-Za-z0-9._]{0,30}$/.test(v)) {
+      toast("An Instagram username has letters, numbers, dots and underscores.", { error: true });
+      return;
+    }
+    if (v !== (p.settings.instagramUser ?? "")) void p.onSave({ instagramUser: v });
+    else p.onUser(undefined);
+  };
+  const tool = p.links?.instaloader;
+  const login = p.links?.login;
+  return (
+    <fieldset class="kt-setting">
+      <legend class="label">Instagram links</legend>
+      <p class="kt-help">
+        {!p.links
+          ? "Checking for instaloader…"
+          : tool?.found
+            ? `instaloader ${tool.version} is ready: paste a reel link on Home to copy its edit, or on a template to use its sound.`
+            : `Install instaloader to paste Instagram links: ${tool?.install ?? "pipx install instaloader"}`}
+      </p>
+      <div class="kt-setting-row">
+        <label class="kt-fine" for="ig-user">
+          Your Instagram username (optional)
+        </label>
+        <input
+          id="ig-user"
+          class="kt-input mono"
+          autoComplete="off"
+          spellcheck={false}
+          placeholder="username"
+          value={value}
+          onInput={(e) => p.onUser(e.currentTarget.value)}
+          onBlur={commit}
+          onKeyDown={(e) => e.key === "Enter" && commit()}
+          aria-describedby="ig-user-help"
+        />
+        <p class="kt-help" id="ig-user-help">
+          Instagram often wants you signed in. Run <code>instaloader --login {value || "username"}</code> once in a terminal: it saves a session, and your
+          password stays with instaloader. {login?.mode === "session" ? "Saved session found." : value && login?.sessionFound === false ? "No saved session for this name yet." : ""}
+        </p>
+      </div>
+      <div class="kt-setting-row">
+        <label class="kt-fine" for="ig-browser">
+          Or borrow the Instagram login of a browser
+        </label>
+        <select
+          id="ig-browser"
+          class="kt-input kt-select"
+          value={p.settings.instagramBrowser ?? ""}
+          onChange={(e) => void p.onSave({ instagramBrowser: e.currentTarget.value })}
+        >
+          <option value="">No browser</option>
+          {BROWSERS.map((b) => (
+            <option value={b} key={b}>
+              {titleCase(b)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <p class="kt-help">Links are fetched on this computer. Copy only edits, and use only sounds, you have the rights to.</p>
+    </fieldset>
   );
 }

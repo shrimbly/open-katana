@@ -40,7 +40,8 @@ describe("licences in katana_backend and katana_plan", () => {
     const est = r.structuredContent as { jobs: Job[]; licenseWarnings: string[]; commercial: boolean };
     expect(est.commercial).toBe(false);
     expect(est.jobs.find((j) => j.line === "key1")).toMatchObject({ profile: "qwen21-edit", license: { name: "Qwen Research License", commercial: "no" } });
-    expect(est.jobs.find((j) => j.line === "plate1")!.license).toEqual({ name: "Apache-2.0", commercial: "yes" });
+    // Plates come from the keyframe model's weights, so they carry the same non-commercial licence.
+    expect(est.jobs.find((j) => j.line === "plate1")).toMatchObject({ profile: "qwen21", license: { name: "Qwen Research License", commercial: "no" } });
     expect(est.licenseWarnings.some((w) => w.startsWith("qwen21-edit: Qwen Research License, non-commercial"))).toBe(true);
     expect(est.licenseWarnings.some((w) => w.startsWith("minimax-h3-r2v: MiniMax H3 Community License, restricted"))).toBe(true);
     expect(textOf(r)).toContain("Licence warnings");

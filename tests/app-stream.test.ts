@@ -252,14 +252,31 @@ describe("progress follows what happened (live run r-20261017105905-eb90)", () =
     expect(f.phase).toBe("stills");
     expect(state(f).headline).toBe("SHOOTING STILLS");
     // A view of the render is the check.
-    const g = play([S.init(), S.tool("t1", "katana_render", { preview: true }), S.ok("t1"), S.tool("t2", "katana_view", { target: "render-pages", pages: [1] }), S.ok("t2")]);
+    const g = play([S.init(), S.tool("t0", "katana_generate", { jobs: [{ operation: "clip.i2v" }] }), S.ok("t0"), S.tool("t1", "katana_render", { preview: true }), S.ok("t1"), S.tool("t2", "katana_view", { target: "render-pages", pages: [1] }), S.ok("t2")]);
     expect(g.phase).toBe("check");
   });
 
+  it("a placeholder cut and draft render before any generation is still planning (live run r-20261017164857-9cea)", () => {
+    const f = play([
+      S.init(), S.tool("t1", "katana_status"), S.ok("t1"),
+      S.tool("t2", "katana_edit", { fromPreset: { slots: { walkout: "s1" } } }), S.ok("t2"),
+      S.tool("t3", "katana_render", { preview: true }), S.ok("t3"),
+      S.tool("t4", "katana_view", { target: "render-pages", pages: [1] }), S.ok("t4"),
+    ]);
+    expect(f.phase).toBe("plan");
+    const s = state(f);
+    expect(s.headline).toBe("PLANNING SHOTS");
+    expect(s.pct).toBeLessThan(20);
+    // Once it generates, the real cut and render move the run on.
+    const g = play([S.init(), S.tool("t1", "katana_edit"), S.ok("t1"), S.tool("t2", "katana_generate", { jobs: [{ operation: "still.compose" }] }), S.ok("t2"), S.tool("t3", "katana_edit"), S.ok("t3")]);
+    expect(g.phase).toBe("cut");
+  });
+
   it("a failed render or delivery goes back to where the run was; a retake after the cut is that work again", () => {
-    const f = play([S.init(), S.tool("t1", "katana_edit"), S.ok("t1"), S.tool("t2", "katana_render", { preview: true }), S.error("t2", 'No asset "ref" in project x.')]);
+    const gen = [S.tool("t0", "katana_generate", { jobs: [{ operation: "clip.i2v" }] }), S.ok("t0")];
+    const f = play([S.init(), ...gen, S.tool("t1", "katana_edit"), S.ok("t1"), S.tool("t2", "katana_render", { preview: true }), S.error("t2", 'No asset "ref" in project x.')]);
     expect(f.phase).toBe("cut");
-    const g = play([S.init(), S.tool("t1", "katana_render", { preview: false }), S.ok("t1"), S.tool("t2", "katana_deliver"), S.error("t2", "No final render yet.")]);
+    const g = play([S.init(), ...gen, S.tool("t1", "katana_render", { preview: false }), S.ok("t1"), S.tool("t2", "katana_deliver"), S.error("t2", "No final render yet.")]);
     expect(g.phase).toBe("render");
     expect(state(g).headline).toBe("RENDERING");
     const h = play([S.init(), S.tool("t1", "katana_edit"), S.ok("t1"), S.tool("t2", "katana_generate", { jobs: [{ operation: "clip.i2v" }] }), S.ok("t2")]);

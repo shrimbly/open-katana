@@ -33,15 +33,24 @@ export type RenderMode = "preview" | "master" | "notext";
  * on top while it is being edited. The file is replaced atomically so open players never read a
  * half-written render.
  */
+/** The canvas scaled so its long side is `longSide` (even sides, as the encoder needs). */
+export function masterSize(canvas: { width: number; height: number }, longSide: number): { width: number; height: number } {
+  const k = longSide / Math.max(canvas.width, canvas.height);
+  return { width: Math.round((canvas.width * k) / 2) * 2, height: Math.round((canvas.height * k) / 2) * 2 };
+}
+
 export async function renderProject(ws: Workspace, mode: RenderMode, edlOverride?: Edl, onProgress?: (done: number, total: number) => void): Promise<RenderResult> {
   const saved = edlOverride ?? (await ws.readJson("render/edl.json", EdlSchema));
   if (!saved) throw new Error("No edit saved yet.");
   // Overlay text and the flashes that wash over it are drawn live by the studio.
   const edl = mode === "notext" ? { ...saved, text: saved.text.filter((t) => t.behind), flashes: saved.flashes.filter((f) => !f.overText) } : saved;
   const final = ws.path("render", `${mode === "notext" ? "preview-notext" : mode}.mp4`);
-  const result = await renderEdl(edl, {
+  const master = mode === "master" ? edl.canvas.master : undefined;
+  const sized = master ? { ...edl, canvas: { ...edl.canvas, ...masterSize(edl.canvas, master.longSide) } } : edl;
+  const result = await renderEdl(sized, {
     source: (id) => {
-      const a = ws.asset(id);
+      // The master uses each generated shot's upscaled copy when there is one.
+      const a = (mode === "master" && ws.upscaled(id)) || ws.asset(id);
       return { path: ws.path(a.path), kind: a.kind, hasAudio: a.hasAudio ?? a.kind === "audio" };
     },
     beats: await edlBeats(ws, saved),

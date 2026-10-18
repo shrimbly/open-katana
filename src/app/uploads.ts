@@ -249,6 +249,45 @@ export async function receiveUpload(req: UploadRequest): Promise<Upload> {
   }
 }
 
+/**
+ * Stages a file already on this computer (an Instagram download) as an upload: the same size cap, type
+ * sniffing and probing as a received body. The file is copied, so the caller can delete its own.
+ */
+export async function storeLocalUpload(src: string, purpose: UploadPurpose, name: string): Promise<Upload> {
+  const size = (await stat(src)).size;
+  if (size === 0) throw new HttpError(400, "That file is empty.", "EMPTY");
+  if (size > UPLOAD_LIMITS[purpose]) throw tooLarge(size, purpose);
+  const data = await readFile(src);
+  const type = sniff(data.subarray(0, 64), purpose);
+  if (!type || type.heic) throw unsupported(purpose);
+  const id = randomBytes(8).toString("hex");
+  const dir = join(inboxDir(), id);
+  await mkdir(dir, { recursive: true });
+  try {
+    const file = join(dir, `media${type.ext}`);
+    await writeFile(file, data);
+    const checks: UploadCheck[] = [];
+    const described = await describe(file, purpose, checks);
+    const upload: Upload = {
+      id,
+      purpose,
+      name: uploadLabel(encodeURIComponent(name)),
+      bytes: size,
+      url: `/uploads/${id}/media`,
+      ...described,
+      hash: createHash("sha256").update(data).digest("hex"),
+      checks,
+      createdAt: new Date().toISOString(),
+    };
+    const meta: UploadMeta = { ...upload, file: file.slice(dir.length + 1) };
+    await writeFile(join(dir, "meta.json"), JSON.stringify(meta, null, 2));
+    return upload;
+  } catch (e) {
+    await rm(dir, { recursive: true, force: true });
+    throw e;
+  }
+}
+
 export async function readUpload(id: string): Promise<Upload | undefined> {
   const meta = await readMeta(id);
   if (!meta) return undefined;

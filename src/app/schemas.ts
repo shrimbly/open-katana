@@ -120,6 +120,8 @@ const settingsFields = {
   defaultClaudeCapUsd: claudeCap,
   keepAwake: z.boolean(),
   licencesAcknowledged: z.array(z.string().max(64)).max(200),
+  instagramUser: z.string().regex(/^[A-Za-z0-9._]{0,30}$/, "an Instagram username: letters, numbers, dots and underscores"),
+  instagramBrowser: z.enum(["", "chrome", "firefox", "safari", "edge", "brave", "opera", "vivaldi", "chromium"]),
 };
 
 /** settings.json: missing keys take their defaults. */
@@ -129,6 +131,8 @@ export const AppSettingsSchema = z.object({
   defaultClaudeCapUsd: settingsFields.defaultClaudeCapUsd.default(DEFAULT_APP_SETTINGS.defaultClaudeCapUsd),
   keepAwake: settingsFields.keepAwake.default(DEFAULT_APP_SETTINGS.keepAwake),
   licencesAcknowledged: settingsFields.licencesAcknowledged.default([]),
+  instagramUser: settingsFields.instagramUser.optional(),
+  instagramBrowser: settingsFields.instagramBrowser.optional(),
 }) satisfies z.ZodType<AppSettings>;
 
 /** PUT /api/settings body: any subset of the settings, no defaults filled in. */

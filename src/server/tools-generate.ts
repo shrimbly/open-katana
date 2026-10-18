@@ -5,6 +5,7 @@ import {
   adjustedSeconds,
   cancelOpenJobs,
   chooseProfile,
+  estimateSpec,
   estimateSpecFor,
   type JobSpec,
   JobSpecSchema,
@@ -16,13 +17,15 @@ import {
 import { licenseLabel, licenseWarnings, profile } from "../comfy/operations.js";
 import { extractFrame } from "../engine/sheets.js";
 import type { Workspace } from "../project/workspace.js";
+import { masterSize } from "../project/render-project.js";
+import { type Edl, EdlSchema } from "../render/edl.js";
 import { approvalFromFile, backendError, isAppRun, isConnectionError, presetAspect, readApproval, refuseIfLocked, userPicks } from "./app-mode.js";
 import { type Content, image, result, safe, table } from "./content.js";
 import { identityPanel } from "./identity.js";
 import type { State } from "./state.js";
 import { WIDGETS, widgetMeta } from "./widgets.js";
 
-export const ROUTES = ["source", "graphic", "still", "i2v", "motion", "flf"] as const;
+export const ROUTES = ["source", "graphic", "still", "i2v", "motion", "camera", "flf"] as const;
 
 export const PlanSchema = z.object({
   contract: z
@@ -136,7 +139,76 @@ async function committedSeconds(ws: Workspace, kind: string): Promise<number> {
 /** 45 → "45", 45.25 → "45.3". */
 const minutes = (m: number) => String(+m.toFixed(1));
 
+/** Every asset id the edit's shots draw from (sources and layers), in order of first use. */
+export function editAssets(edl: Pick<Edl, "shots">): string[] {
+  const ids: string[] = [];
+  const walk = (v: unknown): void => {
+    if (Array.isArray(v)) v.forEach(walk);
+    else if (v && typeof v === "object") {
+      for (const [k, x] of Object.entries(v)) {
+        if (k === "asset" && typeof x === "string") {
+          if (!ids.includes(x)) ids.push(x);
+        } else walk(x);
+      }
+    }
+  };
+  walk(edl.shots);
+  return ids;
+}
+
+/**
+ * The generated clips and stills of an edit that need an upscaled copy for a master of `longSide`: not
+ * already that big, and with no upscaled copy at least that big. Reference footage and photos are left as
+ * they are.
+ */
+export function upscaleTargets(ws: Workspace, edl: Pick<Edl, "shots">, longSide: number): { id: string; kind: "image" | "video" }[] {
+  const long = (a: { width?: number; height?: number }) => Math.max(a.width ?? 0, a.height ?? 0);
+  const out: { id: string; kind: "image" | "video" }[] = [];
+  for (const id of editAssets(edl)) {
+    const a = ws.project.assets.find((x) => x.id === id);
+    if (!a || a.role !== "generated" || a.upscaleOf || a.kind === "audio") continue;
+    if (long(a) >= longSide) continue;
+    const up = ws.upscaled(id);
+    if (up && long(up) >= longSide) continue;
+    out.push({ id, kind: a.kind });
+  }
+  return out;
+}
+
 export function registerGenerationTools(server: McpServer, state: State): void {
+  /**
+   * The GPU-minute gate, then the submit: shared by katana_generate and katana_upscale. The agent may lower
+   * the cap (budgetMinutes), never raise it past the person's approval.
+   */
+  async function submitWithinBudget(ws: Workspace, specs: JobSpec[], budgetMinutes: number | undefined, approval: Awaited<ReturnType<typeof readApproval>>) {
+    const cfg = await state.config();
+    const backend = await state.backend();
+    const capMinutes = approval ? Math.min(budgetMinutes ?? Infinity, approval.gpuMinutes) : (budgetMinutes ?? cfg.budgetMinutes);
+    const cap = capMinutes * 60;
+    const prior = await committedSeconds(ws, backend.kind);
+    const aspect = await defaultAspect(ws);
+    const resolved = await Promise.all(specs.map((s) => resolveSpec(ws, s)));
+    let planned = 0;
+    for (const s of resolved) {
+      const profileId = chooseProfile(s, { tier: cfg.tier, overrides: cfg.profiles, commercial: cfg.commercial });
+      // An upscale's cost follows its source clip, which estimateSpec reads from the project.
+      const est = s.operation === "upscale" ? estimateSpec(ws, s, profileId) : estimateSpecFor(s, profileId, aspect);
+      planned += adjustedSeconds(est.seconds, s.takes, { ratio: await timingRatio(backend.target, profileId), kind: backend.kind });
+    }
+    if (prior + planned > cap) {
+      const needs = (prior + planned) / 60;
+      if (approval) {
+        throw new Error(`[BUDGET] needs=${needs.toFixed(1)} cap=${minutes(capMinutes)} This needs about ${Math.round(needs)} GPU minutes in total; the person approved ${minutes(capMinutes)}. Stop now.`);
+      }
+      throw new Error(`This would bring the project to ~${needs.toFixed(1)} GPU minutes, over the approved ${(cap / 60).toFixed(1)}. Ask the user for a larger budget or trim the lines.`);
+    }
+    try {
+      return { ...(await submitJobs(ws, backend, resolved, { tier: cfg.tier, overrides: cfg.profiles, commercial: cfg.commercial })), backend };
+    } catch (e) {
+      throw isAppRun() ? backendError(e, backend.target) : e;
+    }
+  }
+
   server.registerTool(
     "katana_plan",
     {
@@ -166,7 +238,8 @@ export function registerGenerationTools(server: McpServer, state: State): void {
             if (!base || base.kind !== "video") problems.push(`${j.line}: ${r} needs a video asset before the @`);
           } else if (!ws.project.assets.some((a) => a.id === r)) problems.push(`${j.line}: unknown asset ${r}`);
         }
-        if (j.operation === "clip.motion" && !j.motion) problems.push(`${j.line}: clip.motion needs motion {startSec, endSec, control}`);
+        if (j.operation === "clip.motion" && !j.motion && !j.camera) problems.push(`${j.line}: clip.motion needs motion {startSec, endSec, control} (a reference shot's move) or camera {orbit, arc, push} (a camera move)`);
+        if (j.operation === "clip.motion" && j.camera && !j.start) problems.push(`${j.line}: a camera move needs start (its keyframe)`);
       }
       if (problems.length) throw new Error(`Plan has problems:\n- ${problems.join("\n- ")}`);
       const rows = [];
@@ -265,33 +338,7 @@ export function registerGenerationTools(server: McpServer, state: State): void {
       }
       specs.push(...(a.jobs ?? []));
       if (!specs.length) throw new Error("Nothing to generate: give lines or jobs.");
-      const cfg = await state.config();
-      const backend = await state.backend();
-      // The agent may lower the cap (budgetMinutes), never raise it past the person's approval.
-      const capMinutes = approval ? Math.min(a.budgetMinutes ?? Infinity, approval.gpuMinutes) : (a.budgetMinutes ?? cfg.budgetMinutes);
-      const cap = capMinutes * 60;
-      const prior = await committedSeconds(ws, backend.kind);
-      const aspect = await defaultAspect(ws);
-      let planned = 0;
-      for (const s of specs) {
-        const profileId = chooseProfile(s, { tier: cfg.tier, overrides: cfg.profiles, commercial: cfg.commercial });
-        planned += adjustedSeconds(estimateSpecFor(s, profileId, aspect).seconds, s.takes, { ratio: await timingRatio(backend.target, profileId), kind: backend.kind });
-      }
-      if (prior + planned > cap) {
-        const needs = (prior + planned) / 60;
-        if (approval) {
-          throw new Error(`[BUDGET] needs=${needs.toFixed(1)} cap=${minutes(capMinutes)} This needs about ${Math.round(needs)} GPU minutes in total; the person approved ${minutes(capMinutes)}. Stop now.`);
-        }
-        throw new Error(`This would bring the project to ~${needs.toFixed(1)} GPU minutes, over the approved ${(cap / 60).toFixed(1)}. Ask the user for a larger budget or trim the lines.`);
-      }
-      const resolved = await Promise.all(specs.map((s) => resolveSpec(ws, s)));
-      let submittedJobs: Awaited<ReturnType<typeof submitJobs>>;
-      try {
-        submittedJobs = await submitJobs(ws, backend, resolved, { tier: cfg.tier, overrides: cfg.profiles, commercial: cfg.commercial });
-      } catch (e) {
-        throw isAppRun() ? backendError(e, backend.target) : e;
-      }
-      const { submitted, warnings } = submittedJobs;
+      const { submitted, warnings, backend } = await submitWithinBudget(ws, specs, a.budgetMinutes, approval);
       await ws.setStage("generating");
       return result(
         [
@@ -300,6 +347,53 @@ export function registerGenerationTools(server: McpServer, state: State): void {
           "Next: katana_wait.",
         ].filter(Boolean).join("\n"),
         { jobs: submitted.map((j) => ({ id: j.id, profile: j.profile, promptId: j.promptId })), licenseWarnings: warnings },
+      );
+    }),
+  );
+
+  server.registerTool(
+    "katana_upscale",
+    {
+      title: "Upscale the cut",
+      description:
+        "The finishing pass, once the cut is final and before the final render: upscales every generated clip and still the saved edit uses (SeedVR2: restored detail, the same frames and timing, colours matched) and sets the master to that size. Previews keep using the originals; katana_render with preview: false uses the upscaled copies. Shots already upscaled to that size are skipped. Then katana_wait, then katana_render with preview: false.",
+      inputSchema: z.object({
+        project: z.string(),
+        longSide: z.number().int().min(720).max(3840).default(1920).describe("The master's long side in pixels: 1920 for 1080p, 3840 for 4K"),
+        approved: z.boolean().describe("True after the user approved generation (the same approval as katana_generate)"),
+        budgetMinutes: z.number().positive().optional().describe("The GPU-minute cap the user approved; defaults to the project budget"),
+      }),
+    },
+    safe(async (a) => {
+      const ws = await state.workspace(a.project);
+      refuseIfLocked(ws);
+      const approval = approvalFromFile() ? await readApproval(ws) : undefined;
+      if (approvalFromFile() && !approval) throw new Error("[APPROVAL] The person approves spending in the app. Stop now and summarise the plan in two lines.");
+      if (!a.approved) throw new Error("Get the user's approval for the GPU time first, as for katana_generate.");
+      const edl = await ws.readJson("render/edl.json", EdlSchema);
+      if (!edl) throw new Error("No edit saved yet. Cut the edit with katana_edit, then upscale it.");
+      const targets = upscaleTargets(ws, edl, a.longSide);
+      const lines = new Set<string>();
+      const specs: JobSpec[] = targets.map((t) => {
+        let line = `up-${t.id}`.replace(/[^A-Za-z0-9_-]/g, "-").slice(0, 32);
+        while (lines.has(line)) line = `${line.slice(0, 29)}-${lines.size}`;
+        lines.add(line);
+        return JobSpecSchema.parse({ line, operation: "upscale", prompt: `upscale ${t.id}`, start: t.id, longSide: a.longSide, seed: 1 });
+      });
+      const submitted = specs.length ? (await submitWithinBudget(ws, specs, a.budgetMinutes, approval)).submitted : [];
+      const fresh = (await ws.readJson("render/edl.json", EdlSchema)) ?? edl;
+      fresh.canvas.master = { longSide: a.longSide };
+      await ws.writeJson("render/edl.json", fresh);
+      const size = masterSize(fresh.canvas, a.longSide);
+      return result(
+        [
+          specs.length
+            ? `Upscaling ${specs.length} shot(s) for a ${size.width}×${size.height} master:\n${table(["Job", "Shot", "Profile", "Est. s"], submitted.map((j) => [j.id, j.spec.start ?? "", j.profile, j.estimateSec]))}`
+            : `Every generated shot in the edit already has an upscaled copy at least ${a.longSide} px on its long side.`,
+          `The master renders at ${size.width}×${size.height}; previews stay at the edit's size.`,
+          specs.length ? "Next: katana_wait, then katana_render with preview: false." : "Next: katana_render with preview: false.",
+        ].join("\n"),
+        { jobs: submitted.map((j) => ({ id: j.id, asset: j.spec.start, profile: j.profile })), master: size },
       );
     }),
   );
